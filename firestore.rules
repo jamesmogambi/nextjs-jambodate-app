@@ -78,5 +78,16 @@ service cloud.firestore {
       allow delete: if isSignedIn() 
                     && existing().userId == request.auth.uid;
     }
+
+    // 5. Verification Requests (Owner submits their own docs; admin-only moderation handled server-side)
+    match /verification_requests/{verificationId} {
+      allow create: if isSignedIn()
+                    && isValidId(verificationId)
+                    && incoming().userId == request.auth.uid
+                    && incoming().status == 'pending';
+      allow get, list: if isSignedIn()
+                    && resource.data.userId == request.auth.uid;
+      allow update, delete: if false;
+    }
   }
 }

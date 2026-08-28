@@ -36,6 +36,7 @@ import {
   setDoc,
   updateDoc,
   collection,
+  addDoc,
   onSnapshot,
   getDocFromServer,
 } from 'firebase/firestore';
@@ -98,7 +99,7 @@ interface AuthContextType {
   blockUser: (targetProfileId: string) => void;
   reportUser: (targetProfileId: string, reason: ReportReason, details?: string) => void;
   unmatchUser: (matchId: string) => void;
-  requestVerification: (selfieUrl: string, idDocumentUrl?: string) => void;
+  requestVerification: (selfieUrl: string, idDocumentUrl?: string) => Promise<void>;
   adminApproveVerification: (requestId: string) => void;
   adminRejectVerification: (requestId: string) => void;
   adminToggleSuspend: (userId: string) => void;
@@ -870,8 +871,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setMatches((prev) => prev.filter((m) => m.id !== matchId));
   };
 
-  const requestVerification = (selfieUrl: string, idDocumentUrl?: string) => {
+  const requestVerification = async (selfieUrl: string, idDocumentUrl?: string): Promise<void> => {
     if (!currentUser) return;
+
     const newReq: VerificationRequest = {
       id: `ver_req_${Date.now()}`,
       userId: currentUser.id,
@@ -882,8 +884,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       submittedAt: new Date().toISOString(),
       status: 'pending',
     };
+
+    // Optimistic local + persistence state update
     setVerificationRequests((prev) => [newReq, ...prev]);
     updateProfile({ verificationStatus: 'pending' });
+
+    // Persist the verification request to Firestore so the moderation
+    // team / admin dashboard can surface it.
+    try {
+      await addDoc(collection(db, 'verification_requests'), newReq);
+    } catch (err) {
+      console.error('Error saving verification request to Firestore:', err);
+    }
+
+    // Trigger the server-side email notifications (admin + user ack).
+    // Email delivery is best-effort here; the request is already recorded.
+    try {
+      await fetch('/api/verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: currentUser.id,
+          userName: currentUser.name,
+          userEmail: userAccount?.email || firebaseUser?.email || '',
+          userPhoto: newReq.userPhoto,
+          selfieUrl,
+          idDocumentUrl,
+          submittedAt: newReq.submittedAt,
+        }),
+      });
+    } catch (err) {
+      console.error('Error triggering verification email notifications:', err);
+    }
   };
 
   const adminApproveVerification = (requestId: string) => {

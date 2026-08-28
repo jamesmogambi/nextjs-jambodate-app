@@ -19,13 +19,16 @@ import { Badge } from '@/components/ui/Badge';
 import { VerificationBadge } from '@/components/ui/VerificationBadge';
 import { useAuth } from '@/lib/context/AuthContext';
 import { useToast } from '@/components/ui/Toast';
+import { uploadToCloudinary, isCloudinaryConfigured } from '@/lib/cloudinary';
 
 export default function VerificationPage() {
   const { currentUser, requestVerification } = useAuth();
   const { toast } = useToast();
 
   const [selfieUrl, setSelfieUrl] = useState<string>('');
+  const [selfieFile, setSelfieFile] = useState<File | null>(null);
   const [idDocUrl, setIdDocUrl] = useState<string>('');
+  const [idDocFile, setIdDocFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const samplePoses = [
@@ -34,9 +37,30 @@ export default function VerificationPage() {
     'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=800&q=80',
   ];
 
+  const readFileAsDataURL = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+  const uploadOrFallback = async (file: File, folder: string): Promise<string> => {
+    if (isCloudinaryConfigured()) {
+      try {
+        const result = await uploadToCloudinary(file, folder);
+        return result.secure_url;
+      } catch (err) {
+        console.warn('Cloudinary upload failed for verification file, falling back to data URL:', err);
+      }
+    }
+    return readFileAsDataURL(file);
+  };
+
   const handleSelfieUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setSelfieFile(file);
       const reader = new FileReader();
       reader.onload = (event) => {
         setSelfieUrl(event.target?.result as string);
@@ -48,6 +72,7 @@ export default function VerificationPage() {
   const handleIdUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setIdDocFile(file);
       const reader = new FileReader();
       reader.onload = (event) => {
         setIdDocUrl(event.target?.result as string);
@@ -56,19 +81,34 @@ export default function VerificationPage() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selfieUrl) {
+    if (!selfieFile) {
       toast('Please provide a verification selfie matching the requested pose.', 'error');
       return;
     }
 
     setIsSubmitting(true);
-    setTimeout(() => {
-      requestVerification(selfieUrl, idDocUrl);
+    try {
+      const uid = currentUser?.id || 'demo';
+      const uploadedSelfie = await uploadOrFallback(
+        selfieFile,
+        `jamboDate_verification/${uid}`
+      );
+      let uploadedId: string | undefined;
+      if (idDocFile) {
+        uploadedId = await uploadOrFallback(idDocFile, `jamboDate_verification/${uid}`);
+      }
+
+      await requestVerification(uploadedSelfie, uploadedId);
+      toast('Verification submitted! Our moderation team will review your documents shortly.', 'success');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Verification submission failed';
+      console.error(message, err);
+      toast(message, 'error');
+    } finally {
       setIsSubmitting(false);
-      toast('Verification submitted! Moderation review takes under 2 hours.', 'success');
-    }, 800);
+    }
   };
 
   const status = currentUser?.verificationStatus || 'unverified';
@@ -165,13 +205,16 @@ export default function VerificationPage() {
                 <div className="relative w-48 aspect-[3/4] mx-auto rounded-2xl overflow-hidden border border-[#272D2A]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={selfieUrl} alt="Selfie preview" className="w-full h-full object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => setSelfieUrl('')}
-                    className="absolute top-2 right-2 text-xs bg-black/70 px-2 py-1 rounded text-white hover:bg-black"
-                  >
-                    Retake
-                  </button>
+                   <button
+                     type="button"
+                     onClick={() => {
+                       setSelfieUrl('');
+                       setSelfieFile(null);
+                     }}
+                     className="absolute top-2 right-2 text-xs bg-black/70 px-2 py-1 rounded text-white hover:bg-black"
+                   >
+                     Retake
+                   </button>
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center border-2 border-dashed border-[#272D2A] rounded-2xl p-6 hover:border-[#3A423E] transition-colors">
@@ -242,13 +285,16 @@ export default function VerificationPage() {
                     <CheckCircle2 className="w-4 h-4" />
                     <span>ID Document Attached</span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setIdDocUrl('')}
-                    className="text-xs text-[#A8AAA5] hover:text-red-400"
-                  >
-                    Remove
-                  </button>
+                   <button
+                     type="button"
+                     onClick={() => {
+                       setIdDocUrl('');
+                       setIdDocFile(null);
+                     }}
+                     className="text-xs text-[#A8AAA5] hover:text-red-400"
+                   >
+                     Remove
+                   </button>
                 </div>
               ) : (
                 <label className="flex flex-col items-center justify-center border border-[#272D2A] rounded-xl p-4 cursor-pointer hover:bg-[#1B211E] transition-colors">
