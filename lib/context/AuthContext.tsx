@@ -19,7 +19,6 @@ import {
 import {
   auth,
   db,
-  storage,
   handleFirestoreError,
   OperationType,
 } from '@/lib/firebase';
@@ -40,7 +39,7 @@ import {
   onSnapshot,
   getDocFromServer,
 } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { uploadToCloudinary, isCloudinaryConfigured, type CloudinaryUploadResult } from '@/lib/cloudinary';
 import { INITIAL_KENYAN_PROFILES, DEMO_CURRENT_USER } from '@/lib/data/kenyanProfiles';
 import {
   calculateAge,
@@ -122,6 +121,15 @@ const STORAGE_KEYS = {
   USER_ACCOUNT: 'jambodate_user_account',
 };
 
+async function readFileAsDataURL(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
@@ -147,8 +155,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         await getDocFromServer(doc(db, 'test', 'connection'));
       } catch (error) {
-        if (error instanceof Error && error.message.includes('the client is offline')) {
-          console.error('Please check your Firebase configuration.');
+        console.error('Firebase configuration check failed. Error:', error);
+        const message = error instanceof Error ? error.message : String(error);
+        if (
+          message.includes('the client is offline') ||
+          message.includes('Could not reach') ||
+          message.includes('UNAVAILABLE') ||
+          message.includes('NOT_FOUND')
+        ) {
+          console.error(
+            'Please check your Firebase configuration. Verify your NEXT_PUBLIC_FIREBASE_* env vars and Firestore database ID.'
+          );
         }
       }
     }
@@ -580,50 +597,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // 8. Photo Upload with Firebase Storage
+  // 8. Photo Upload with Cloudinary
   const uploadPhoto = async (file: File, index: number): Promise<string> => {
     const uid = firebaseUser?.uid || currentUser?.uid || 'user_demo';
     const timestamp = Date.now();
     const cleanName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
-    const storagePath = `users/${uid}/photos/${timestamp}_${cleanName}`;
 
     try {
-      // 1. Try Firebase Storage upload
-      const storageReference = ref(storage, storagePath);
-      const uploadResult = await uploadBytes(storageReference, file);
-      const downloadUrl = await getDownloadURL(uploadResult.ref);
+      // 1. Try Cloudinary upload
+      if (isCloudinaryConfigured()) {
+        const cloudinaryFolder = `jamboDate_profiles/${uid}`;
+        const result: CloudinaryUploadResult = await uploadToCloudinary(
+          file,
+          cloudinaryFolder
+        );
 
-      // 2. Create photo document in `photos` collection
-      if (firebaseUser?.uid) {
-        const photoDocId = `photo_${timestamp}_${Math.random().toString(36).slice(2, 6)}`;
-        try {
-          await setDoc(doc(db, 'photos', photoDocId), {
-            id: photoDocId,
-            userId: uid,
-            url: downloadUrl,
-            storagePath,
-            orderIndex: index,
-            isPrimary: index === 0,
-            createdAt: new Date().toISOString(),
-          });
-        } catch (err) {
-          console.warn('Error writing photo document:', err);
+        // 2. Create photo document in `photos` collection
+        if (firebaseUser?.uid) {
+          const photoDocId = `photo_${timestamp}_${Math.random().toString(36).slice(2, 6)}`;
+          try {
+            await setDoc(doc(db, 'photos', photoDocId), {
+              id: photoDocId,
+              userId: uid,
+              url: result.secure_url,
+              cloudinaryPublicId: result.public_id,
+              storagePath: cloudinaryFolder,
+              orderIndex: index,
+              isPrimary: index === 0,
+              createdAt: new Date().toISOString(),
+            });
+          } catch (err) {
+            console.warn('Error writing photo document:', err);
+          }
         }
+
+        return result.secure_url;
       }
 
-      return downloadUrl;
-    } catch (storageError) {
-      console.warn('Firebase Storage upload notice, using optimized client fallback:', storageError);
-      // Fallback to high-quality compressed Data URL so user is never blocked
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const resultUrl = reader.result as string;
-          resolve(resultUrl);
-        };
-        reader.onerror = (e) => reject(e);
-        reader.readAsDataURL(file);
-      });
+      // 3. Fallback: read as Data URL so user is never blocked
+      console.warn('Cloudinary not configured, using client-side Data URL fallback');
+      return readFileAsDataURL(file);
+    } catch (error) {
+      console.error('Cloudinary upload failed, falling back to Data URL:', error);
+      return readFileAsDataURL(file);
     }
   };
 

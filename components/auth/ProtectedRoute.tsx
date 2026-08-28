@@ -36,7 +36,7 @@ export function ProtectedRoute({
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#D85B7A] to-[#D99A52] p-0.5 animate-pulse">
             <div className="w-full h-full bg-[#0D1110] rounded-[14px] flex items-center justify-center">
-              <span className="font-extrabold text-2xl text-[#F5F3EF]">M</span>
+              <span className="font-extrabold text-2xl text-[#F5F3EF]">J</span>
             </div>
           </div>
           <div className="flex items-center gap-2">

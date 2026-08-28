@@ -148,7 +148,7 @@ export function PhotoUploader({
             )}
           </div>
           <p className="text-sm font-semibold text-[#F5F3EF]">
-            {isUploading ? 'Uploading to Firebase Storage...' : 'Upload Photos (JPEG, PNG, WEBP)'}
+            {isUploading ? 'Uploading to Cloudinary...' : 'Upload Photos (JPEG, PNG, WEBP)'}
           </p>
           <p className="text-xs text-[#A8AAA5] mt-1">
             Drag & drop here or click to browse · {photos.length} of {maxPhotos} photos added

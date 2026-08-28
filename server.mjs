@@ -22,7 +22,7 @@ app.prepare().then(() => {
   });
 
   server.listen(port, hostname, () => {
-    console.log(`> Moyo Next.js Server running on http://${hostname}:${port} (dev: ${dev})`);
+    console.log(`> JamboDate Next.js Server running on http://${hostname}:${port} (dev: ${dev})`);
   });
 }).catch((err) => {
   console.error('Failed to prepare Next.js app:', err);
