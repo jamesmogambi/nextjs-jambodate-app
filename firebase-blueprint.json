@@ -1,0 +1,99 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Private user account authentication record with PII isolation",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "email": { "type": "string", "format": "email", "description": "User email address" },
+        "firstName": { "type": "string", "maxLength": 80, "description": "First name of the user" },
+        "birthDate": { "type": "string", "maxLength": 10, "description": "User date of birth YYYY-MM-DD" },
+        "gender": { "type": "string", "maxLength": 40, "description": "User gender" },
+        "county": { "type": "string", "maxLength": 80, "description": "User county or city" },
+        "agreedToTerms": { "type": "boolean", "description": "Acceptance of Terms and Privacy" },
+        "onboardingCompleted": { "type": "boolean", "description": "Whether the user finished onboarding" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Account creation timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last update timestamp" }
+      },
+      "required": ["uid", "email", "firstName", "birthDate", "gender", "county"]
+    },
+    "Profile": {
+      "title": "Profile",
+      "description": "Public dating profile visible to potential matches in JamboDate",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID of profile owner" },
+        "name": { "type": "string", "maxLength": 80, "description": "Display name / First name" },
+        "age": { "type": "number", "description": "Calculated age (must be 18+)" },
+        "birthDate": { "type": "string", "maxLength": 10, "description": "Birth date YYYY-MM-DD" },
+        "gender": { "type": "string", "maxLength": 40, "description": "Gender identification" },
+        "location": { "type": "string", "maxLength": 100, "description": "Kenyan county, city, or neighborhood" },
+        "relationshipIntention": { "type": "string", "maxLength": 50, "description": "Intention: Marriage, Serious relationship, Dating, Friendship" },
+        "bio": { "type": "string", "maxLength": 800, "description": "Personal biography" },
+        "occupation": { "type": "string", "maxLength": 100, "description": "Occupation / Career" },
+        "education": { "type": "string", "maxLength": 120, "description": "Education level and institution" },
+        "languages": { "type": "array", "description": "Languages spoken" },
+        "interests": { "type": "array", "description": "Interests and hobbies" },
+        "lifestyle": { "type": "object", "description": "Lifestyle habits, family goals, and religion" },
+        "photos": { "type": "array", "description": "List of photo URLs (1 to 6 photos)" },
+        "verificationStatus": { "type": "string", "maxLength": 30, "description": "Identity verification status" },
+        "subscriptionTier": { "type": "string", "maxLength": 20, "description": "Subscription tier" },
+        "completionPercentage": { "type": "number", "description": "Profile completion percentage (0-100)" },
+        "isOnline": { "type": "boolean", "description": "Online presence flag" },
+        "lastActive": { "type": "string", "maxLength": 50, "description": "Human readable last active string" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Profile creation timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last profile update timestamp" }
+      },
+      "required": ["uid", "name", "age", "birthDate", "gender", "location", "relationshipIntention", "photos"]
+    },
+    "Preferences": {
+      "title": "Preferences",
+      "description": "User match preferences for discovery",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "ageRange": { "type": "array", "description": "Preferred age range [min, max]" },
+        "genderPreference": { "type": "array", "description": "Preferred genders" },
+        "preferredLocation": { "type": "string", "maxLength": 100, "description": "Preferred location or Any" },
+        "preferredIntentions": { "type": "array", "description": "Preferred relationship intentions" },
+        "verifiedOnly": { "type": "boolean", "description": "Show only verified accounts" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Timestamp of preference update" }
+      },
+      "required": ["uid", "ageRange", "genderPreference", "preferredIntentions"]
+    },
+    "Photo": {
+      "title": "Photo",
+      "description": "Photo metadata record linked to Firebase Storage",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "description": "Photo document ID" },
+        "userId": { "type": "string", "maxLength": 128, "description": "Auth UID of photo owner" },
+        "url": { "type": "string", "maxLength": 2048, "description": "Public or storage download URL" },
+        "storagePath": { "type": "string", "maxLength": 512, "description": "Firebase Storage path" },
+        "orderIndex": { "type": "number", "description": "Display order index (0 to 5)" },
+        "isPrimary": { "type": "boolean", "description": "Whether this is the primary avatar photo" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Upload timestamp" }
+      },
+      "required": ["id", "userId", "url", "orderIndex"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Private user information and credentials isolation (Owner read/write only)"
+    },
+    "/profiles/{profileId}": {
+      "schema": "Profile",
+      "description": "Public dating profiles (Authenticated read, owner write)"
+    },
+    "/preferences/{userId}": {
+      "schema": "Preferences",
+      "description": "Private dating and discovery preferences (Owner read/write only)"
+    },
+    "/photos/{photoId}": {
+      "schema": "Photo",
+      "description": "Uploaded dating profile photos metadata (Authenticated read, owner write)"
+    }
+  }
+}
