@@ -13,6 +13,8 @@ import {
   Eye,
   Settings,
   Sparkles,
+  Clock,
+  XCircle,
 } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
 import { useAuth } from '@/lib/context/AuthContext';
@@ -20,6 +22,13 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { VerificationBadge } from '@/components/ui/VerificationBadge';
 import { ProfileCard } from '@/components/ui/ProfileCard';
+
+const VERIFICATION_CALLTOACTION: Record<string, { label: string; variant: 'green' | 'primary' }> = {
+  unverified: { label: 'Start Verification', variant: 'green' },
+  rejected: { label: 'Resubmit Documents', variant: 'primary' },
+  pending: { label: 'View Submission', variant: 'primary' },
+  verified: { label: 'View Badge', variant: 'primary' },
+};
 
 export default function ProfilePage() {
   const { currentUser, profileCompletion } = useAuth();
@@ -126,29 +135,79 @@ export default function ProfilePage() {
               )}
             </div>
 
-            {/* Verification Status Callout */}
-            {currentUser.verificationStatus !== 'verified' && (
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-[#3FAF72]/15 via-[#151A18] to-[#151A18] border border-[#3FAF72]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#3FAF72]/20 flex items-center justify-center text-[#3FAF72] shrink-0">
-                    <ShieldCheck className="w-5 h-5" />
+            {/* Verification Status Callout — dynamic by current status */}
+            {(() => {
+              const status = currentUser.verificationStatus;
+              const icon =
+                status === 'pending' ? <Clock className="w-5 h-5" /> :
+                status === 'rejected' ? <XCircle className="w-5 h-5" /> :
+                <ShieldCheck className="w-5 h-5" />;
+              const iconWrap =
+                status === 'pending'
+                  ? 'bg-[#D99A52]/20 text-[#D99A52]'
+                  : status === 'rejected'
+                  ? 'bg-red-500/20 text-red-400'
+                  : 'bg-[#3FAF72]/20 text-[#3FAF72]';
+              const border =
+                status === 'pending'
+                  ? 'border-[#D99A52]/30'
+                  : status === 'rejected'
+                  ? 'border-red-500/30'
+                  : 'border-[#3FAF72]/30';
+              const gradientFrom =
+                status === 'pending'
+                  ? 'from-[#D99A52]/15'
+                  : status === 'rejected'
+                  ? 'from-red-500/15'
+                  : 'from-[#3FAF72]/15';
+
+              let heading: React.ReactNode;
+              let message: string;
+              if (status === 'verified') {
+                heading = (
+                  <VerificationBadge status={status} showText />
+                );
+                message = 'Your identity is confirmed. Enjoy priority discovery and the trusted badge on your cards.';
+              } else if (status === 'pending') {
+                heading = <h3 className="text-sm font-bold text-[#F5F3EF]">Verification In Review</h3>;
+                message = 'Our Nairobi moderation team is reviewing your documents. Reviews conclude in a few hours.';
+              } else if (status === 'rejected') {
+                heading = <h3 className="text-sm font-bold text-red-400">Verification Needs Resubmission</h3>;
+                message = 'Your documents couldn‘t be confirmed. Please resubmit clearer photos.';
+              } else {
+                heading = <h3 className="text-sm font-bold text-[#F5F3EF]">Get Verified on JamboDate</h3>;
+                message = 'Verified singles receive 3x more meaningful connections and unlock trusted status.';
+              }
+
+              const cta = VERIFICATION_CALLTOACTION[status] ?? VERIFICATION_CALLTOACTION.unverified;
+              const showCta = status !== 'verified' && status !== 'pending';
+
+              return (
+                <div
+                  className={`p-4 rounded-2xl bg-gradient-to-r ${gradientFrom} via-[#151A18] to-[#151A18] border ${border} flex flex-col sm:flex-row sm:items-center justify-between gap-4`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`w-10 h-10 rounded-xl ${iconWrap} flex items-center justify-center shrink-0`}>
+                      {icon}
+                    </div>
+                    <div>
+                      {heading}
+                      <p className="text-xs text-[#A8AAA5] mt-1">{message}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-[#F5F3EF]">
-                      Get Verified on JamboDate
-                    </h3>
-                    <p className="text-xs text-[#A8AAA5]">
-                      Verified singles receive 3x more meaningful connections and unlock trusted status.
-                    </p>
-                  </div>
+                  {showCta && (
+                    <Link href="/verification" className="shrink-0">
+                      <Button variant={cta.variant} size="sm">{cta.label}</Button>
+                    </Link>
+                  )}
+                  {status === 'pending' && (
+                    <div className="shrink-0">
+                      <VerificationBadge status={status} showText />
+                    </div>
+                  )}
                 </div>
-                <Link href="/verification" className="shrink-0">
-                  <Button variant="green" size="sm">
-                    Start Verification
-                  </Button>
-                </Link>
-              </div>
-            )}
+              );
+            })()}
 
             {/* Profile Overview Card */}
             <div className="bg-[#151A18] rounded-2xl border border-[#272D2A] p-6 space-y-6">

@@ -29,6 +29,20 @@ export function Sidebar() {
     return acc + (m.unreadCountByUser?.[currentUser?.id || ''] || 0);
   }, 0);
 
+  const verificationStatus = currentUser?.verificationStatus ?? 'unverified';
+  const verificationLabel: Record<string, string> = {
+    verified: 'Verified Kenyan Single',
+    pending: 'Verification Pending',
+    rejected: 'Verification Rejected',
+    unverified: 'Not Verified',
+  };
+  const verificationLabelColor: Record<string, string> = {
+    verified: 'text-[#3FAF72]',
+    pending: 'text-[#D99A52]',
+    rejected: 'text-red-400',
+    unverified: 'text-[#A8AAA5]',
+  };
+
   const navItems = [
     {
       label: 'Discover',
@@ -231,9 +245,12 @@ export function Sidebar() {
                 <span className="text-sm font-semibold text-[#F5F3EF] truncate group-hover:text-[#D85B7A] transition-colors">
                   {currentUser.name}
                 </span>
-                <span className="text-xs text-[#3FAF72] font-semibold flex items-center gap-1">
-                  Verified
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <VerificationBadge status={verificationStatus} />
+                  <span className={`text-xs font-semibold ${verificationLabelColor[verificationStatus]}`}>
+                    {verificationLabel[verificationStatus]}
+                  </span>
+                </div>
               </div>
             </Link>
             <button
