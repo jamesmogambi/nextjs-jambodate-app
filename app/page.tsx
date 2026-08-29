@@ -1,4 +1,6 @@
-import React from 'react';
+'use client';
+
+import React, { useMemo } from 'react';
 import Link from 'next/link';
 import {
   ShieldCheck,
@@ -18,9 +20,28 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { VerificationBadge } from '@/components/ui/VerificationBadge';
 import { INITIAL_KENYAN_PROFILES } from '@/lib/data/kenyanProfiles';
+import { useAuth } from '@/lib/context/AuthContext';
+import { filterRealPhotos } from '@/lib/utils';
 
 export default function HomePage() {
-  const featured = INITIAL_KENYAN_PROFILES.slice(0, 4);
+  const { currentUser, allProfiles } = useAuth();
+
+  const featured = useMemo(() => {
+    return allProfiles
+      .filter((p) => {
+        if (currentUser && p.id === currentUser.id) return false;
+        return filterRealPhotos(p.photos || []).length > 0;
+      })
+      .sort((a, b) => {
+        if (a.verificationStatus === 'verified' && b.verificationStatus !== 'verified') return -1;
+        if (b.verificationStatus === 'verified' && a.verificationStatus !== 'verified') return 1;
+        if ((a.compatibility ?? 0) !== (b.compatibility ?? 0)) {
+          return (b.compatibility ?? 0) - (a.compatibility ?? 0);
+        }
+        return 0;
+      })
+      .slice(0, 4);
+  }, [currentUser, allProfiles]);
 
   return (
     <div className="min-h-screen bg-[#0D1110] text-[#F5F3EF] flex flex-col selection:bg-[#D85B7A]/30">
@@ -219,14 +240,14 @@ export default function HomePage() {
                 key={profile.id}
                 className="rounded-2xl overflow-hidden bg-[#151A18] border border-[#272D2A] shadow-lg flex flex-col group"
               >
-                <div className="relative aspect-[3/4] overflow-hidden bg-[#0D1110]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={profile.photos[0]}
-                    alt={profile.name}
-                    className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-300"
-                    referrerPolicy="no-referrer"
-                  />
+                 <div className="relative aspect-[3/4] overflow-hidden bg-[#0D1110]">
+                   {/* eslint-disable-next-line @next/next/no-img-element */}
+                   <img
+                     src={filterRealPhotos(profile.photos || [])[0]}
+                     alt={profile.name}
+                     className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-300"
+                     referrerPolicy="no-referrer"
+                   />
                   <div className="absolute top-3 right-3">
                     <VerificationBadge status={profile.verificationStatus} />
                   </div>
