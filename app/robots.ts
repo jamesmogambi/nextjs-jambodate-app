@@ -49,7 +49,7 @@ export default function robots(): MetadataRoute.Robots {
         ],
       },
     ],
-    sitemap: 'https://jambodate.co.ke/sitemap.xml',
-    host: 'https://jambodate.co.ke',
+    sitemap: 'https://jambodate.xyz/sitemap.xml',
+    host: 'https://jambodate.xyz',
   };
 }

@@ -4,11 +4,11 @@ import VerificationPage from './page';
 export const metadata: Metadata = {
   title: 'Identity Verification | JamboDate Kenya',
   description: 'Get verified on JamboDate with a selfie and Kenyan ID. Build trust with the green verification badge and get 3x more meaningful connections.',
-  alternates: { canonical: 'https://jambodate.co.ke/verification' },
+  alternates: { canonical: 'https://jambodate.xyz/verification' },
   openGraph: {
     title: 'Identity Verification | JamboDate Kenya',
     description: 'Get verified on JamboDate with a selfie and Kenyan ID. Build trust with the green verification badge and get 3x more meaningful connections.',
-    url: 'https://jambodate.co.ke/verification',
+    url: 'https://jambodate.xyz/verification',
     type: 'website',
   },
   robots: { index: true, follow: true },

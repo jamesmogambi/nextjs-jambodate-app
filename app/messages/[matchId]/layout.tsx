@@ -4,11 +4,11 @@ import ChatRoomPage from './page';
 export const metadata: Metadata = {
   title: 'Chat | JamboDate Kenya',
   description: 'Private conversation on JamboDate. Message your verified match safely and thoughtfully.',
-  alternates: { canonical: 'https://jambodate.co.ke/messages' },
+  alternates: { canonical: 'https://jambodate.xyz/messages' },
   openGraph: {
     title: 'Chat | JamboDate Kenya',
     description: 'Private conversation on JamboDate. Message your verified match safely and thoughtfully.',
-    url: 'https://jambodate.co.ke/messages',
+    url: 'https://jambodate.xyz/messages',
     type: 'website',
   },
   robots: { index: false, follow: false },

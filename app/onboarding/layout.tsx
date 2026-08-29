@@ -4,11 +4,11 @@ import OnboardingPage from './page';
 export const metadata: Metadata = {
   title: 'Complete Your Profile | JamboDate Kenya',
   description: 'Finish setting up your JamboDate profile in 7 steps. Add photos, bio, and preferences to start meeting genuine Kenyan singles.',
-  alternates: { canonical: 'https://jambodate.co.ke/onboarding' },
+  alternates: { canonical: 'https://jambodate.xyz/onboarding' },
   openGraph: {
     title: 'Complete Your Profile | JamboDate Kenya',
     description: 'Finish setting up your JamboDate profile in 7 steps. Add photos, bio, and preferences to start meeting genuine Kenyan singles.',
-    url: 'https://jambodate.co.ke/onboarding',
+    url: 'https://jambodate.xyz/onboarding',
     type: 'website',
   },
   robots: { index: false, follow: false },

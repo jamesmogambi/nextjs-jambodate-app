@@ -17,7 +17,7 @@ export function GEOMetaTags({
   description = 'A modern, trustworthy dating platform designed for Kenyan singles seeking genuine, meaningful connections.',
   section = 'Dating & Social',
   tags = ['Kenyan dating', 'Nairobi singles', 'meaningful connections', 'verified dating'],
-  citation = 'JamboDate Technologies Ltd. JamboDate: Real People. Meaningful Connections. https://jambodate.co.ke',
+  citation = 'JamboDate Technologies Ltd. JamboDate: Real People. Meaningful Connections. https://jambodate.xyz',
 }: GEOMetaTagsProps) {
   return (
     <>

@@ -4,11 +4,11 @@ import EditProfilePage from './page';
 export const metadata: Metadata = {
   title: 'Edit Profile | JamboDate Kenya',
   description: 'Update your JamboDate profile photos, bio, location, and preferences. Keep your profile fresh to attract more meaningful connections.',
-  alternates: { canonical: 'https://jambodate.co.ke/profile/edit' },
+  alternates: { canonical: 'https://jambodate.xyz/profile/edit' },
   openGraph: {
     title: 'Edit Profile | JamboDate Kenya',
     description: 'Update your JamboDate profile photos, bio, location, and preferences. Keep your profile fresh to attract more meaningful connections.',
-    url: 'https://jambodate.co.ke/profile/edit',
+    url: 'https://jambodate.xyz/profile/edit',
     type: 'website',
   },
   robots: { index: false, follow: false },

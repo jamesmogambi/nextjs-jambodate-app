@@ -4,11 +4,11 @@ import SettingsPage from './page';
 export const metadata: Metadata = {
   title: 'Settings & Preferences | JamboDate Kenya',
   description: 'Manage your JamboDate account settings, discovery preferences, privacy controls, and notification alerts.',
-  alternates: { canonical: 'https://jambodate.co.ke/settings' },
+  alternates: { canonical: 'https://jambodate.xyz/settings' },
   openGraph: {
     title: 'Settings & Preferences | JamboDate Kenya',
     description: 'Manage your JamboDate account settings, discovery preferences, privacy controls, and notification alerts.',
-    url: 'https://jambodate.co.ke/settings',
+    url: 'https://jambodate.xyz/settings',
     type: 'website',
   },
   robots: { index: false, follow: false },

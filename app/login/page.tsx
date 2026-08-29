@@ -145,7 +145,7 @@ function LoginForm() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="e.g. james@jambodate.co.ke"
+                  placeholder="e.g. james@jambodate.xyz"
                   className="pl-9"
                   required
                 />
@@ -218,7 +218,7 @@ function LoginForm() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={() => handleQuickDemoLogin('user_current', 'james@jambodate.co.ke')}
+                onClick={() => handleQuickDemoLogin('user_current', 'james@jambodate.xyz')}
                 className="p-2.5 rounded-xl bg-[#0D1110] border border-[#272D2A] hover:border-[#D85B7A] text-left transition-colors cursor-pointer group"
               >
                 <p className="text-xs font-semibold text-[#F5F3EF] group-hover:text-[#D85B7A]">
@@ -229,7 +229,7 @@ function LoginForm() {
 
               <button
                 type="button"
-                onClick={() => handleQuickDemoLogin('user_wangari', 'wangari@jambodate.co.ke')}
+                onClick={() => handleQuickDemoLogin('user_wangari', 'wangari@jambodate.xyz')}
                 className="p-2.5 rounded-xl bg-[#0D1110] border border-[#272D2A] hover:border-[#D85B7A] text-left transition-colors cursor-pointer group"
               >
                 <p className="text-xs font-semibold text-[#F5F3EF] group-hover:text-[#D85B7A]">
@@ -319,7 +319,7 @@ function LoginForm() {
                       type="email"
                       value={resetEmail}
                       onChange={(e) => setResetEmail(e.target.value)}
-                      placeholder="e.g. james@jambodate.co.ke"
+                      placeholder="e.g. james@jambodate.xyz"
                       className="pl-9"
                       required
                     />

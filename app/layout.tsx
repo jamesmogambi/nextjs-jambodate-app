@@ -5,7 +5,7 @@ import { StructuredData } from '@/components/seo/StructuredData';
 import { GEOMetaTags } from '@/components/seo/GEOMetaTags';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://jambodate.co.ke'),
+  metadataBase: new URL('https://jambodate.xyz'),
   title: {
     default: 'JamboDate | Real People. Meaningful Connections',
     template: '%s | JamboDate Kenya',
@@ -35,15 +35,15 @@ export const metadata: Metadata = {
   generator: 'Next.js',
   referrer: 'origin-when-cross-origin',
   alternates: {
-    canonical: 'https://jambodate.co.ke',
+    canonical: 'https://jambodate.xyz',
     languages: {
-      'en-KE': 'https://jambodate.co.ke',
+      'en-KE': 'https://jambodate.xyz',
     },
   },
   openGraph: {
     type: 'website',
     locale: 'en_KE',
-    url: 'https://jambodate.co.ke',
+    url: 'https://jambodate.xyz',
     siteName: 'JamboDate',
     title: 'JamboDate | Real People. Meaningful Connections',
     description: 'A modern, trustworthy dating platform designed for Kenyan singles seeking genuine, meaningful connections. Verified profiles, intentional matching, and safety-first design.',
