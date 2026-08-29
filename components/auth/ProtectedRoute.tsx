@@ -3,7 +3,7 @@
 import React, { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/context/AuthContext';
-import { LOGIN_ROUTE } from '@/lib/auth/routes';
+import { UNAUTHENTICATED_REDIRECT } from '@/lib/auth/routes';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -30,7 +30,7 @@ export function ProtectedRoute({
     if (isLoading) return;
 
     if (!currentUser) {
-      router.replace(`${LOGIN_ROUTE}?redirect=${encodeURIComponent(pathname)}`);
+      router.replace(UNAUTHENTICATED_REDIRECT);
       return;
     }
 

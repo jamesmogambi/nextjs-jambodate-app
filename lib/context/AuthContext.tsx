@@ -321,13 +321,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setIsLoading(false);
         }
       } else {
-        // No Firebase user authenticated
-        // Check if there is a demo user active in localStorage
+        // No Firebase user authenticated.
+        // Preserve any existing demo session that was explicitly started (e.g.
+        // via the login fast-path or switchUser) and persisted to localStorage.
+        // A truly sessionless visitor is left unauthenticated (currentUser = null)
+        // so that private routes redirect to the public home page.
         const storedUser = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
         if (storedUser) {
           try {
             const parsed = JSON.parse(storedUser);
-            // If it's a demo account (e.g. user_current, user_wangari), keep it active for testing
+            // Demo accounts (e.g. user_current, user_wangari) stay active for testing
             if (parsed.id?.startsWith('user_')) {
               setCurrentUser(parsed);
             } else {
@@ -337,9 +340,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setCurrentUser(null);
           }
         } else {
-          // Default to James Mugambi for initial preview if no user exists
-          setCurrentUser(DEMO_CURRENT_USER);
-          localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(DEMO_CURRENT_USER));
+          setCurrentUser(null);
         }
         setIsLoading(false);
       }

@@ -25,6 +25,14 @@ export const LOGIN_ROUTE = '/login';
 export const REGISTER_ROUTE = '/register';
 export const DEFAULT_APP_ROUTE = '/discover';
 
+/**
+ * Where unauthenticated users attempting to reach a private route are sent.
+ * Set to the public home page (`/`) so visitors land on the landing hub,
+ * which exposes the sign-in / sign-up CTAs. Change to `LOGIN_ROUTE` (or a
+ * `?redirect=` form) to send them straight to the sign-in form instead.
+ */
+export const UNAUTHENTICATED_REDIRECT = '/';
+
 export const PUBLIC_ROUTES: readonly string[] = [
   '/',
   LOGIN_ROUTE,
