@@ -3,15 +3,24 @@
 import React, { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/context/AuthContext';
+import { LOGIN_ROUTE } from '@/lib/auth/routes';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  /** When true (default), users with an incomplete profile are sent to onboarding. */
   requireOnboarding?: boolean;
+  /**
+   * Route to send an authenticated user to once their onboarding is finished.
+   * Used on the onboarding page itself so completed / demo sessions are
+   * redirected away from the onboarding wizard instead of looping.
+   */
+  completedRedirect?: string;
 }
 
 export function ProtectedRoute({
   children,
   requireOnboarding = true,
+  completedRedirect,
 }: ProtectedRouteProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -21,14 +30,21 @@ export function ProtectedRoute({
     if (isLoading) return;
 
     if (!currentUser) {
-      router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
+      router.replace(`${LOGIN_ROUTE}?redirect=${encodeURIComponent(pathname)}`);
+      return;
+    }
+
+    // The onboarding page: if the user has already finished onboarding (or is a
+    // demo session without an explicit incomplete flag), bounce them to the app.
+    if (completedRedirect && currentUser.onboardingCompleted !== false) {
+      router.replace(completedRedirect);
       return;
     }
 
     if (requireOnboarding && currentUser.onboardingCompleted === false && pathname !== '/onboarding') {
       router.replace('/onboarding');
     }
-  }, [currentUser, isLoading, router, pathname, requireOnboarding]);
+  }, [currentUser, isLoading, router, pathname, requireOnboarding, completedRedirect]);
 
   if (isLoading) {
     return (

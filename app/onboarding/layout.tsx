@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
-import OnboardingPage from './page';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { DEFAULT_APP_ROUTE } from '@/lib/auth/routes';
 
 export const metadata: Metadata = {
   title: 'Complete Your Profile | JamboDate Kenya',
@@ -15,5 +16,9 @@ export const metadata: Metadata = {
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return (
+    <ProtectedRoute completedRedirect={DEFAULT_APP_ROUTE}>
+      {children}
+    </ProtectedRoute>
+  );
 }
