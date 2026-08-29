@@ -20,11 +20,12 @@ const PAYMENT_POLL_TIMEOUT_MS = 90000;
 export interface BoostModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialPlan?: BoostPlan;
 }
 
 type BoostStep = 'select' | 'checkout' | 'processing';
 
-export function BoostModal({ isOpen, onClose }: BoostModalProps) {
+export function BoostModal({ isOpen, onClose, initialPlan }: BoostModalProps) {
   const { currentUser, getIdToken, firebaseUser } = useAuth();
   const { toast } = useToast();
 
@@ -42,8 +43,13 @@ export function BoostModal({ isOpen, onClose }: BoostModalProps) {
       setPaymentId(null);
       setError(null);
       setIsSubmitting(false);
+    } else if (initialPlan) {
+      setSelectedPlan(initialPlan);
+      setStep('checkout');
+      setError(null);
+      setIsSubmitting(false);
     }
-  }, [isOpen]);
+  }, [isOpen, initialPlan]);
 
   const alreadyActive = currentUser ? isBoostActive(currentUser.boostActive, currentUser.boostExpiresAt) : false;
 

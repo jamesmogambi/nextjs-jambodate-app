@@ -199,6 +199,7 @@ export function Sidebar() {
         </div>
 
         {/* Demo Switcher for ease of testing */}
+        {/*
         <div className="pt-4 border-t border-[#272D2A]">
           <p className="px-3.5 text-[10px] font-bold uppercase tracking-wider text-[#A8AAA5]/60 mb-2 flex items-center gap-1">
             <Users className="w-3 h-3" /> Switch Demo Account
@@ -216,6 +217,7 @@ export function Sidebar() {
             </select>
           </div>
         </div>
+        */}
       </div>
 
       {/* Profile Completion Indicator */}
