@@ -15,11 +15,15 @@ import {
   Sparkles,
   Clock,
   XCircle,
+  Rocket,
 } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
 import { useAuth } from '@/lib/context/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { BoostModal } from '@/components/boost/BoostModal';
+import { isBoostActive, toDate } from '@/lib/boost/boostUtils';
+import { trackEvent } from '@/lib/analytics';
 import { VerificationBadge } from '@/components/ui/VerificationBadge';
 import { ProfileCard } from '@/components/ui/ProfileCard';
 
@@ -33,6 +37,13 @@ const VERIFICATION_CALLTOACTION: Record<string, { label: string; variant: 'green
 export default function ProfilePage() {
   const { currentUser, profileCompletion } = useAuth();
   const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [isBoostModalOpen, setIsBoostModalOpen] = useState(false);
+
+  const boostActive = currentUser
+    ? isBoostActive(currentUser.boostActive, currentUser.boostExpiresAt)
+    : false;
+  const boostExpiresAt = currentUser ? toDate(currentUser.boostExpiresAt) : null;
+  const boostPlanLabel = currentUser?.boostPlan?.replace('_', ' ') ?? '';
 
   if (!currentUser) {
     return (
@@ -208,6 +219,55 @@ export default function ProfilePage() {
                 </div>
               );
             })()}
+
+            {/* Boost Your Profile Callout */}
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-[#D85B7A]/15 via-[#151A18] to-[#151A18] border border-[#D85B7A]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#D85B7A]/20 flex items-center justify-center text-[#D85B7A] shrink-0">
+                  <Rocket className="w-5 h-5" />
+                </div>
+                <div>
+                  {boostActive ? (
+                    <>
+                      <h3 className="text-sm font-bold text-[#D99A52] flex items-center gap-1.5">
+                        🔥 Boost Active
+                      </h3>
+                      <p className="text-xs text-[#A8AAA5]">
+                        Your profile is currently getting increased visibility in Discovery.
+                      </p>
+                      {boostExpiresAt && (
+                        <p className="text-[10px] text-[#E5AF72] mt-0.5">
+                          Expires: {boostExpiresAt.toLocaleString('en-KE', { timeZone: 'Africa/Nairobi' })}
+                          {boostPlanLabel && ` · ${boostPlanLabel}`}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <h3 className="text-sm font-bold text-[#F5F3EF]">
+                        Boost Your Profile
+                      </h3>
+                      <p className="text-xs text-[#A8AAA5]">
+                        Get more visibility and increase your chances of getting matches. Starts at KSh 100.
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
+              {!boostActive && (
+                <button
+                  onClick={() => {
+                    setIsBoostModalOpen(true);
+                    trackEvent('boost_viewed', { source: 'profile_page' });
+                  }}
+                  className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#D85B7A] to-[#D99A52] text-[#0D1110] text-sm font-bold shadow-md shadow-[#D85B7A]/15 hover:from-[#c04a68] hover:to-[#C88A42] transition-all cursor-pointer"
+                >
+                  <Rocket className="w-3.5 h-3.5" /> Boost Now
+                </button>
+              )}
+            </div>
+
+            <BoostModal isOpen={isBoostModalOpen} onClose={() => setIsBoostModalOpen(false)} />
 
             {/* Profile Overview Card */}
             <div className="bg-[#151A18] rounded-2xl border border-[#272D2A] p-6 space-y-6">

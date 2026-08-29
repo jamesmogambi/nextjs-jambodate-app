@@ -33,6 +33,9 @@ export type ReportReason =
 
 export type VerificationStatus = 'unverified' | 'pending' | 'verified' | 'rejected';
 
+export type BoostPlanId = '1_day' | '1_week' | '1_month';
+export type BoostStatus = 'active' | 'expired' | 'failed' | 'pending';
+
 export type SubscriptionTier = 'free' | 'plus' | 'gold';
 
 export type RelationshipStatus = 'Single' | 'Never married' | 'Divorced' | 'Widowed' | 'Separated';
@@ -70,6 +73,10 @@ export interface UserAccount {
   agreedToPrivacy: boolean;
   agreedToGuidelines: boolean;
   onboardingCompleted: boolean;
+  boostActive?: boolean | null;
+  boostPlan?: BoostPlanId | null;
+  boostStartedAt?: string | null;
+  boostExpiresAt?: string | null;
   createdAt: string;
   updatedAt?: string;
 }
@@ -103,15 +110,19 @@ export interface UserProfile {
   subscriptionTier: SubscriptionTier;
   completionPercentage?: number;
   onboardingCompleted?: boolean;
-  isOnline?: boolean;
-  lastActive?: string;
-  compatibility?: number;
-  isAdmin?: boolean;
-  isSuspended?: boolean;
-  isBanned?: boolean;
-  createdAt: string;
-  updatedAt?: string;
-}
+   isOnline?: boolean;
+   lastActive?: string;
+   compatibility?: number;
+   isAdmin?: boolean;
+   isSuspended?: boolean;
+   isBanned?: boolean;
+   boostActive?: boolean | null;
+   boostPlan?: BoostPlanId | null;
+   boostStartedAt?: string | null;
+   boostExpiresAt?: string | null;
+   createdAt: string;
+   updatedAt?: string;
+ }
 
 export interface UserAuth {
   uid: string;
@@ -184,4 +195,25 @@ export interface VerificationRequest {
   submittedAt: string;
   status: VerificationStatus;
   notes?: string;
+}
+
+export interface BoostRecord {
+  id: string;
+  userId: string;
+  planId: BoostPlanId;
+  durationDays: number;
+  price: number;
+  currency: string;
+  startedAt: string | null;
+  expiresAt: string | null;
+  status: BoostStatus;
+  paymentId: string;
+  createdAt: string | null;
+}
+
+export interface UserBoostFields {
+  boostActive?: boolean | null;
+  boostPlan?: BoostPlanId | null;
+  boostStartedAt?: string | null;
+  boostExpiresAt?: string | null;
 }

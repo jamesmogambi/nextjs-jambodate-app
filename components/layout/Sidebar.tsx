@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -15,15 +15,27 @@ import {
   ShieldAlert,
   LogOut,
   Users,
+  Rocket,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/context/AuthContext';
 import { Avatar } from '@/components/ui/Avatar';
+import { Badge } from '@/components/ui/Badge';
 import { VerificationBadge } from '@/components/ui/VerificationBadge';
+import { BoostModal } from '@/components/boost/BoostModal';
+import { isBoostActive, toDate } from '@/lib/boost/boostUtils';
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { currentUser, matches, likes, logout, switchUser, allProfiles, profileCompletion } = useAuth();
+  const { currentUser, matches, logout, switchUser, allProfiles, profileCompletion, likesReceived, matchesCount } = useAuth();
+  const [isBoostModalOpen, setIsBoostModalOpen] = useState(false);
+  const boostActive = currentUser
+    ? isBoostActive(currentUser.boostActive, currentUser.boostExpiresAt)
+    : false;
+  const boostExpiresAt = currentUser ? toDate(currentUser.boostExpiresAt) : null;
+  const boostExpiresLabel = boostExpiresAt
+    ? `Expires ${boostExpiresAt.toLocaleString('en-KE', { timeZone: 'Africa/Nairobi' })}`
+    : '';
 
   const unreadMessagesCount = matches.reduce((acc, m) => {
     return acc + (m.unreadCountByUser?.[currentUser?.id || ''] || 0);
@@ -53,13 +65,13 @@ export function Sidebar() {
       label: 'Likes',
       href: '/likes',
       icon: Heart,
-      badge: likes.length > 0 ? likes.length : undefined,
+      badge: likesReceived > 0 ? likesReceived : undefined,
     },
     {
       label: 'Matches',
       href: '/matches',
       icon: Sparkles,
-      badge: matches.length > 0 ? matches.length : undefined,
+      badge: matchesCount > 0 ? matchesCount : undefined,
     },
     {
       label: 'Messages',
@@ -227,7 +239,7 @@ export function Sidebar() {
         </div>
       )}
 
-      {/* User Footer Card */}
+       {/* User Footer Card */}
       {currentUser && (
         <div className="mt-auto p-6 border-t border-[#272D2A] bg-[#151A18]">
           <div className="flex items-center justify-between">
@@ -251,6 +263,15 @@ export function Sidebar() {
                     {verificationLabel[verificationStatus]}
                   </span>
                 </div>
+
+                <div className="flex items-center gap-4 mt-1 text-xs text-[#A8AAA5]">
+                  <span className="flex items-center gap-1">
+                    <Heart className="w-3 h-3 text-[#D85B7A]" /> {likesReceived} Likes
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Sparkles className="w-3 h-3 text-[#3FAF72]" /> {matchesCount} Matches
+                  </span>
+                </div>
               </div>
             </Link>
             <button
@@ -261,8 +282,37 @@ export function Sidebar() {
               <LogOut className="w-4 h-4" />
             </button>
           </div>
+
+          {/* Boost CTA / Active indicator */}
+          <div className="mt-4 pt-4 border-t border-[#272D2A]">
+            {boostActive ? (
+              <div className="flex items-center justify-between p-3 rounded-xl bg-[#D99A52]/10 border border-[#D99A52]/30">
+                <div className="flex items-center gap-2">
+                  <Rocket className="w-4 h-4 text-[#D99A52] animate-bounce" />
+                  <div>
+                    <span className="text-xs font-bold text-[#D99A52] uppercase">🔥 Boost Active</span>
+                    {boostExpiresLabel ? (
+                      <p className="text-[10px] text-[#A8AAA5]">{boostExpiresLabel}</p>
+                    ) : null}
+                  </div>
+                </div>
+                <Badge variant="gold" size="sm">
+                  +25% Discovery
+                </Badge>
+              </div>
+            ) : (
+              <button
+                onClick={() => setIsBoostModalOpen(true)}
+                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#D85B7A] to-[#D99A52] text-[#0D1110] text-sm font-bold shadow-lg shadow-[#D85B7A]/20 hover:from-[#c04a68] hover:to-[#C88A42] transition-all cursor-pointer"
+              >
+                <Rocket className="w-4 h-4" /> Boost Your Profile
+              </button>
+            )}
+          </div>
         </div>
       )}
+
+      <BoostModal isOpen={isBoostModalOpen} onClose={() => setIsBoostModalOpen(false)} />
     </aside>
   );
 }

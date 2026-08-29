@@ -10,6 +10,7 @@ import {
   MessageRecord,
   ReportRecord,
   BlockRecord,
+  LikeRecord,
   VerificationRequest,
   ReportReason,
   Gender,
@@ -37,6 +38,8 @@ import {
   updateDoc,
   collection,
   addDoc,
+  query,
+  orderBy,
   onSnapshot,
   getDocFromServer,
 } from 'firebase/firestore';
@@ -77,6 +80,8 @@ interface AuthContextType {
   blocks: string[];
   verificationRequests: VerificationRequest[];
   currentMatchCelebration: UserProfile | null;
+  likesReceived: number;
+  matchesCount: number;
   clearMatchCelebration: () => void;
   // Core Auth Operations
   registerWithEmail: (data: RegisterPayload) => Promise<boolean>;
@@ -100,6 +105,7 @@ interface AuthContextType {
   reportUser: (targetProfileId: string, reason: ReportReason, details?: string) => void;
   unmatchUser: (matchId: string) => void;
   requestVerification: (selfieUrl: string, idDocumentUrl?: string) => Promise<void>;
+  getIdToken: () => Promise<string | null>;
   adminApproveVerification: (requestId: string) => void;
   adminRejectVerification: (requestId: string) => void;
   adminToggleSuspend: (userId: string) => void;
@@ -149,6 +155,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [blocks, setBlocks] = useState<string[]>([]);
   const [verificationRequests, setVerificationRequests] = useState<VerificationRequest[]>([]);
   const [currentMatchCelebration, setCurrentMatchCelebration] = useState<UserProfile | null>(null);
+
+  // Real, Firestore-backed like/match counts for authenticated users.
+  // Demo sessions (no Firebase user) fall back to the local like/match state.
+  const [realReceivedLikers, setRealReceivedLikers] = useState<string[]>([]);
+  const [realSentLikers, setRealSentLikers] = useState<string[]>([]);
 
   // Test connection to Firestore on initialization
   useEffect(() => {
@@ -341,10 +352,66 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  // Real profiles subscription: for authenticated (non-demo) users we surface
+  // real profiles from Firestore instead of the dummy demonstration pool.
+  // Demo sessions (no Firebase user) keep the initial Kenyan sample data.
+  useEffect(() => {
+    if (!firebaseUser) return undefined;
+
+    const q = query(collection(db, 'profiles'), orderBy('createdAt', 'desc'));
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const realProfiles = snapshot.docs.map((docSnap) => docSnap.data() as UserProfile);
+        setAllProfiles(realProfiles);
+      },
+      (error) => {
+        console.warn('Real profiles subscription error:', error);
+      }
+    );
+
+    return unsubscribe;
+  }, [firebaseUser]);
+
+  // Real likes/matches counts subscription (authenticated users only).
+  // Per-user subcollections keep the data private to the account owner.
+  useEffect(() => {
+    if (!firebaseUser) return undefined;
+
+    const uid = firebaseUser.uid;
+    const unsubReceived = onSnapshot(
+      collection(db, 'users', uid, 'likes_received'),
+      (snapshot) => {
+        setRealReceivedLikers(snapshot.docs.map((d) => (d.data() as LikeRecord).fromUserId));
+      },
+      (error) => {
+        console.warn('likes_received subscription error:', error);
+      }
+    );
+    const unsubSent = onSnapshot(
+      collection(db, 'users', uid, 'likes_sent'),
+      (snapshot) => {
+        setRealSentLikers(snapshot.docs.map((d) => (d.data() as LikeRecord).toUserId));
+      },
+      (error) => {
+        console.warn('likes_sent subscription error:', error);
+      }
+    );
+
+    return () => {
+      unsubReceived();
+      unsubSent();
+    };
+  }, [firebaseUser]);
+
   // Save social state changes
   useEffect(() => {
     if (!isLoading) {
-      localStorage.setItem(STORAGE_KEYS.ALL_PROFILES, JSON.stringify(allProfiles));
+      // Only cache the demo profile pool for demo (non-Firebase) sessions.
+      // Real Firestore profiles are streamed live and must not be cached locally.
+      if (!firebaseUser) {
+        localStorage.setItem(STORAGE_KEYS.ALL_PROFILES, JSON.stringify(allProfiles));
+      }
       localStorage.setItem(STORAGE_KEYS.LIKES, JSON.stringify(likes));
       localStorage.setItem(STORAGE_KEYS.PASSES, JSON.stringify(passes));
       localStorage.setItem(STORAGE_KEYS.MATCHES, JSON.stringify(matches));
@@ -353,10 +420,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem(STORAGE_KEYS.BLOCKS, JSON.stringify(blocks));
       localStorage.setItem(STORAGE_KEYS.VERIFICATIONS, JSON.stringify(verificationRequests));
     }
-  }, [allProfiles, likes, passes, matches, messages, reports, blocks, verificationRequests, isLoading]);
+  }, [allProfiles, likes, passes, matches, messages, reports, blocks, verificationRequests, isLoading, firebaseUser]);
 
   // Profile completion calculation
   const profileCompletion = calculateProfileCompletion(currentUser, userPreferences);
+
+  // Real (authenticated users) or demo (local state) counts used by the sidebar.
+  const isDemoAccount = !firebaseUser;
+  const likesReceived = isDemoAccount
+    ? likes.length
+    : realReceivedLikers.length;
+  const matchesCount = isDemoAccount
+    ? matches.length
+    : realReceivedLikers.filter((id) => realSentLikers.includes(id)).length;
+
+  const getIdToken = useCallback(async (): Promise<string | null> => {
+    if (!firebaseUser) return null;
+    try {
+      return await firebaseUser.getIdToken();
+    } catch {
+      return null;
+    }
+  }, [firebaseUser]);
 
   // 1. Registration with Email, Password & Kenyan Verification
   const registerWithEmail = async (data: RegisterPayload): Promise<boolean> => {
@@ -709,6 +794,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLikes((prev) => [...prev, targetProfileId]);
     }
 
+    // Persist the like to Firestore for authenticated (non-demo) users so the
+    // sidebar counts reflect real activity. Best-effort — never blocks the flow.
+    if (firebaseUser && currentUser.uid === firebaseUser.uid) {
+      const likeId = `like_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+      const record: LikeRecord = {
+        id: likeId,
+        fromUserId: currentUser.uid,
+        toUserId: targetProfileId,
+        createdAt: new Date().toISOString(),
+      };
+      try {
+        await addDoc(collection(db, 'users', targetProfileId, 'likes_received'), record);
+        await addDoc(collection(db, 'users', currentUser.uid, 'likes_sent'), record);
+      } catch (err) {
+        console.warn('Failed to persist like to Firestore:', err);
+      }
+    }
+
     const targetProfile = allProfiles.find((p) => p.id === targetProfileId);
     const isMutualCandidate = ['user_wangari', 'user_brian', 'user_sharon', 'user_faith', 'user_kevin'].includes(targetProfileId);
 
@@ -971,10 +1074,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         matches,
         messages,
         reports,
-        blocks,
-        verificationRequests,
-        currentMatchCelebration,
-        clearMatchCelebration,
+         blocks,
+         verificationRequests,
+         currentMatchCelebration,
+         likesReceived,
+         matchesCount,
+         getIdToken,
+         clearMatchCelebration,
         registerWithEmail,
         loginWithEmail,
         sendPasswordReset,
