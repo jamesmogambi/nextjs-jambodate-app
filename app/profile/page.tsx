@@ -27,12 +27,7 @@ import { isBoostActive, toDate } from '@/lib/boost/boostUtils';
 import { trackEvent } from '@/lib/analytics';
 import { VerificationBadge } from '@/components/ui/VerificationBadge';
 import { ProfileCard } from '@/components/ui/ProfileCard';
-
-const DUMMY_IMAGE_HOSTS = ['images.unsplash.com', 'source.unsplash.com'];
-
-function filterRealPhotos(photos: string[]): string[] {
-  return photos.filter((url) => !DUMMY_IMAGE_HOSTS.some((host) => url.includes(host)));
-}
+import { filterRealPhotos } from '@/lib/utils';
 
 const VERIFICATION_CALLTOACTION: Record<string, { label: string; variant: 'green' | 'primary' }> = {
   unverified: { label: 'Start Verification', variant: 'green' },
