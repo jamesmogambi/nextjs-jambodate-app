@@ -22,7 +22,7 @@ import { useAuth } from "@/lib/context/AuthContext";
 import { useToast } from "@/components/ui/Toast";
 import { calculateAge, isAdult } from "@/lib/utils";
 import { Gender } from "@/types";
-import { KENYAN_COUNTIES_CITIES } from "@/lib/data/kenyanProfiles";
+import { KENYAN_ALL_COUNTIES } from "@/lib/data/kenyanProfiles";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -35,7 +35,7 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [birthDate, setBirthDate] = useState("2000-05-15");
   const [gender, setGender] = useState<Gender>("Woman");
-  const [county, setCounty] = useState("Nairobi (Kilimani / Kileleshwa)");
+  const [county, setCounty] = useState("Nairobi");
   const [agreeTerms, setAgreeTerms] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -291,15 +291,15 @@ export default function RegisterPage() {
 
               <FormField label="County / City" id="reg-county" required>
                 <div className="relative">
-                  <Select
-                    id="reg-county"
-                    value={county}
-                    onChange={(e) => setCounty(e.target.value)}
-                    options={KENYAN_COUNTIES_CITIES.map((c) => ({
-                      value: c,
-                      label: c,
-                    }))}
-                  />
+                   <Select
+                     id="reg-county"
+                     value={county}
+                     onChange={(e) => setCounty(e.target.value)}
+                     options={KENYAN_ALL_COUNTIES.map((c) => ({
+                       value: c,
+                       label: c,
+                     }))}
+                   />
                 </div>
               </FormField>
             </div>

@@ -309,6 +309,65 @@ export const KENYAN_COUNTIES_CITIES: KenyanLocation[] = [
   'Other',
 ];
 
+export const KENYAN_ALL_COUNTIES: string[] = [
+  // === Coast Region ===
+  'Mombasa',
+  'Kwale',
+  'Kilifi',
+  'Tana River',
+  'Lamu',
+  'Taita/Taveta',
+  // === North Eastern Region ===
+  'Garissa',
+  'Wajir',
+  'Mandera',
+  'Marsabit',
+  // === Eastern Region ===
+  'Isiolo',
+  'Meru',
+  'Tharaka-Nithi',
+  'Embu',
+  'Kitui',
+  'Machakos',
+  'Makueni',
+  // === Central Region ===
+  'Nyandarua',
+  'Nyeri',
+  'Kirinyaga',
+  'Murang\'a',
+  'Kiambu',
+  // === Rift Valley Region ===
+  'Turkana',
+  'West Pokot',
+  'Samburu',
+  'Trans Nzoia',
+  'Uasin Gishu',
+  'Elgeyo Marakwet',
+  'Nandi',
+  'Baringo',
+  'Laikipia',
+  'Nakuru',
+  'Narok',
+  'Kajiado',
+  'Kericho',
+  'Bomet',
+  // === Western Region ===
+  'Kakamega',
+  'Vihiga',
+  'Bungoma',
+  'Busia',
+  'Siaya',
+  'Kisumu',
+  'Homa Bay',
+  'Migori',
+  'Kisii',
+  'Nyamira',
+  // === Nairobi ===
+  'Nairobi',
+  // === Other ===
+  'Other',
+];
+
 export const RELATIONSHIP_INTENTIONS: RelationshipIntention[] = [
   'Marriage',
   'Serious relationship',
