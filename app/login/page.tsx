@@ -9,12 +9,10 @@ import {
   ArrowRight,
   AlertCircle,
   Eye,
-  EyeOff,
+   EyeOff,
   CheckCircle2,
-  Users,
   KeyRound,
   X,
-  Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { FormField, Input } from '@/components/ui/FormField';
@@ -26,7 +24,7 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const redirectUrl = searchParams.get('redirect') || '/discover';
 
-  const { loginWithEmail, sendPasswordReset, switchUser } = useAuth();
+  const { loginWithEmail, sendPasswordReset } = useAuth();
   const { toast } = useToast();
 
   const [email, setEmail] = useState('');
@@ -88,11 +86,13 @@ function LoginForm() {
     }
   };
 
+  {/* Quick Demo Selector for fast evaluation - temporarily disabled
   const handleQuickDemoLogin = (profileId: string, demoEmail: string) => {
     switchUser(profileId);
     toast(`Logged in as demo user`, 'info');
     router.push(redirectUrl);
   };
+  */}
 
   return (
     <div className="min-h-screen bg-[#0D1110] text-[#F5F3EF] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 relative">
@@ -194,7 +194,7 @@ function LoginForm() {
             </Button>
           </form>
 
-          {/* Quick Demo Selector for fast evaluation */}
+          {/* Quick Demo Selector for fast evaluation - temporarily disabled
           <div className="mt-8 pt-6 border-t border-[#272D2A]">
             <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#D99A52] mb-3">
               <Sparkles className="w-3.5 h-3.5" /> Quick Demo Accounts for Testing
@@ -223,6 +223,7 @@ function LoginForm() {
               </button>
             </div>
           </div>
+          */}
 
           {/* Switch to Register */}
           <div className="mt-6 pt-6 border-t border-[#272D2A] text-center">
