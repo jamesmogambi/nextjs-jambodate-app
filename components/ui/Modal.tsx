@@ -53,16 +53,16 @@ export function Modal({
   return (
     <div
       id={id}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200"
     >
       <div
-        className="fixed inset-0"
+        className="fixed inset-0 z-[9998]"
         onClick={onClose}
         aria-hidden="true"
       />
       <div
         className={cn(
-          'relative w-full bg-[#151A18] border border-[#272D2A] rounded-2xl p-6 shadow-2xl z-10 max-h-[90vh] overflow-y-auto flex flex-col',
+          'relative w-full bg-[#151A18] border border-[#272D2A] rounded-2xl p-6 shadow-2xl z-[10000] max-h-[90vh] overflow-y-auto flex flex-col',
           maxWidthStyles[maxWidth]
         )}
       >
