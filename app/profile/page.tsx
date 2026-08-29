@@ -16,6 +16,7 @@ import {
   Clock,
   XCircle,
   Rocket,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
 import { useAuth } from '@/lib/context/AuthContext';
@@ -26,6 +27,12 @@ import { isBoostActive, toDate } from '@/lib/boost/boostUtils';
 import { trackEvent } from '@/lib/analytics';
 import { VerificationBadge } from '@/components/ui/VerificationBadge';
 import { ProfileCard } from '@/components/ui/ProfileCard';
+
+const DUMMY_IMAGE_HOSTS = ['images.unsplash.com', 'source.unsplash.com'];
+
+function filterRealPhotos(photos: string[]): string[] {
+  return photos.filter((url) => !DUMMY_IMAGE_HOSTS.some((host) => url.includes(host)));
+}
 
 const VERIFICATION_CALLTOACTION: Record<string, { label: string; variant: 'green' | 'primary' }> = {
   unverified: { label: 'Start Verification', variant: 'green' },
@@ -44,6 +51,7 @@ export default function ProfilePage() {
     : false;
   const boostExpiresAt = currentUser ? toDate(currentUser.boostExpiresAt) : null;
   const boostPlanLabel = currentUser?.boostPlan?.replace('_', ' ') ?? '';
+  const realPhotos = currentUser ? filterRealPhotos(currentUser.photos || []) : [];
 
   if (!currentUser) {
     return (
@@ -273,13 +281,19 @@ export default function ProfilePage() {
             <div className="bg-[#151A18] rounded-2xl border border-[#272D2A] p-6 space-y-6">
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
                 <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden border border-[#272D2A] shrink-0 bg-[#0D1110]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={currentUser.photos[0]}
-                    alt={currentUser.name}
-                    className="w-full h-full object-cover"
-                    referrerPolicy="no-referrer"
-                  />
+                  {realPhotos.length > 0 ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={realPhotos[0]}
+                      alt={currentUser.name}
+                      className="w-full h-full object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-[#A8AAA5]">
+                      <ImageIcon className="w-8 h-8" />
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-1.5 flex-1">
@@ -321,25 +335,35 @@ export default function ProfilePage() {
               <div className="pt-4 border-t border-[#272D2A]">
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="text-xs font-semibold uppercase tracking-wider text-[#A8AAA5]">
-                    Profile Photos ({currentUser.photos.length})
+                    Profile Photos ({realPhotos.length})
                   </h4>
                   <Link href="/profile/edit" className="text-xs text-[#D85B7A] hover:underline">
                     Manage Photos
                   </Link>
                 </div>
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-                  {currentUser.photos.map((p, idx) => (
-                    <div key={idx} className="aspect-[3/4] rounded-xl overflow-hidden border border-[#272D2A] bg-[#0D1110] relative">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={p} alt={`Photo ${idx + 1}`} className="w-full h-full object-cover" />
-                      {idx === 0 && (
-                        <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded bg-black/70 text-[9px] text-white">
-                          Main
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                {realPhotos.length > 0 ? (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                    {realPhotos.map((p, idx) => (
+                      <div key={idx} className="aspect-[3/4] rounded-xl overflow-hidden border border-[#272D2A] bg-[#0D1110] relative">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={p} alt={`Photo ${idx + 1}`} className="w-full h-full object-cover" />
+                        {idx === 0 && (
+                          <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded bg-black/70 text-[9px] text-white">
+                            Main
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-[#A8AAA5]">
+                    <ImageIcon className="w-10 h-10 mx-auto mb-2 opacity-40" />
+                    <p className="text-xs">No profile photos uploaded yet.</p>
+                    <Link href="/profile/edit" className="text-xs text-[#D85B7A] hover:underline mt-1 inline-block">
+                      Upload your first photo
+                    </Link>
+                  </div>
+                )}
               </div>
 
               {/* Career, Education & Languages */}

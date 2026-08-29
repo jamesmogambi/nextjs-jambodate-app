@@ -10,7 +10,6 @@ import {
   MessageCircle,
   User,
   ShieldCheck,
-  Crown,
   Settings,
   ShieldAlert,
   LogOut,
@@ -24,6 +23,7 @@ import { Badge } from '@/components/ui/Badge';
 import { VerificationBadge } from '@/components/ui/VerificationBadge';
 import { BoostModal } from '@/components/boost/BoostModal';
 import { isBoostActive, toDate } from '@/lib/boost/boostUtils';
+import { BOOST_PLAN_MAP } from '@/lib/boost/config';
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -94,9 +94,12 @@ export function Sidebar() {
       highlight: currentUser?.verificationStatus !== 'verified',
     },
     {
-      label: 'JamboDate Gold',
-      href: '/premium',
-      icon: Crown,
+      label:
+        currentUser?.boostActive && currentUser?.boostPlan
+          ? `${BOOST_PLAN_MAP[currentUser.boostPlan]?.name || 'Active'} Boost`
+          : 'Boost Your Profile',
+      href: '/profile',
+      icon: Rocket,
       gold: true,
     },
     {
@@ -263,17 +266,8 @@ export function Sidebar() {
                     {verificationLabel[verificationStatus]}
                   </span>
                 </div>
-
-                <div className="flex items-center gap-4 mt-1 text-xs text-[#A8AAA5]">
-                  <span className="flex items-center gap-1">
-                    <Heart className="w-3 h-3 text-[#D85B7A]" /> {likesReceived} Likes
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Sparkles className="w-3 h-3 text-[#3FAF72]" /> {matchesCount} Matches
-                  </span>
-                </div>
               </div>
-            </Link>
+             </Link>
             <button
               onClick={logout}
               title="Log out"

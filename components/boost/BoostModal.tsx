@@ -177,18 +177,18 @@ export function BoostModal({ isOpen, onClose }: BoostModalProps) {
       onClose={onClose}
       title="🔥 Boost Your Profile"
       description="Get more visibility and increase your chances of getting matches."
-      maxWidth="lg"
+      maxWidth="3xl"
     >
       <div className="pt-2 space-y-5">
         {/* Step: Plan Selection */}
         {step === 'select' && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             {BOOST_PLANS.map((plan) => {
               const isRecommended = plan.id === RECOMMENDED_BOOST_PLAN_ID;
               return (
                 <div
                   key={plan.id}
-                  className={`relative rounded-2xl border p-5 flex flex-col text-center transition-all ${
+                  className={`relative rounded-2xl border p-6 flex flex-col text-center transition-all ${
                     isRecommended
                       ? 'bg-[#18201C] border-2 border-[#D99A52] shadow-2xl shadow-[#D99A52]/10'
                       : 'bg-[#151A18] border-[#272D2A] hover:border-[#3A423E]'
