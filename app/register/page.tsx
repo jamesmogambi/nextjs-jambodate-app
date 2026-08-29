@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import React, { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ShieldCheck,
   Mail,
@@ -15,27 +15,27 @@ import {
   Eye,
   EyeOff,
   CheckCircle2,
-} from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { FormField, Input, Select } from '@/components/ui/FormField';
-import { useAuth } from '@/lib/context/AuthContext';
-import { useToast } from '@/components/ui/Toast';
-import { calculateAge, isAdult } from '@/lib/utils';
-import { Gender } from '@/types';
-import { KENYAN_COUNTIES_CITIES } from '@/lib/data/kenyanProfiles';
+} from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { FormField, Input, Select } from "@/components/ui/FormField";
+import { useAuth } from "@/lib/context/AuthContext";
+import { useToast } from "@/components/ui/Toast";
+import { calculateAge, isAdult } from "@/lib/utils";
+import { Gender } from "@/types";
+import { KENYAN_COUNTIES_CITIES } from "@/lib/data/kenyanProfiles";
 
 export default function RegisterPage() {
   const router = useRouter();
   const { registerWithEmail } = useAuth();
   const { toast } = useToast();
 
-  const [firstName, setFirstName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [firstName, setFirstName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [birthDate, setBirthDate] = useState('2000-05-15');
-  const [gender, setGender] = useState<Gender>('Woman');
-  const [county, setCounty] = useState('Nairobi (Kilimani / Kileleshwa)');
+  const [birthDate, setBirthDate] = useState("2000-05-15");
+  const [gender, setGender] = useState<Gender>("Woman");
+  const [county, setCounty] = useState("Nairobi (Kilimani / Kileleshwa)");
   const [agreeTerms, setAgreeTerms] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -49,39 +49,42 @@ export default function RegisterPage() {
     setErrorMessage(null);
 
     if (!firstName.trim()) {
-      setErrorMessage('Please enter your first name.');
-      toast('First name is required', 'error');
+      setErrorMessage("Please enter your first name.");
+      toast("First name is required", "error");
       return;
     }
 
     if (!email.trim() || !password) {
-      setErrorMessage('Email and password are required.');
-      toast('Please fill in email and password', 'error');
+      setErrorMessage("Email and password are required.");
+      toast("Please fill in email and password", "error");
       return;
     }
 
     if (password.length < 8) {
-      setErrorMessage('Password must be at least 8 characters.');
-      toast('Password must be at least 8 characters', 'error');
+      setErrorMessage("Password must be at least 8 characters.");
+      toast("Password must be at least 8 characters", "error");
       return;
     }
 
     if (!birthDate) {
-      setErrorMessage('Please provide your date of birth.');
-      toast('Date of birth is required', 'error');
+      setErrorMessage("Please provide your date of birth.");
+      toast("Date of birth is required", "error");
       return;
     }
 
     if (!userIsAdult) {
-      const msg = 'You must be at least 18 years old to join JamboDate. Dating profiles are strictly prohibited for minors under Kenyan law and JamboDate safety policy.';
+      const msg =
+        "You must be at least 18 years old to join JamboDate. Dating profiles are strictly prohibited for minors under Kenyan law and JamboDate safety policy.";
       setErrorMessage(msg);
-      toast('Must be 18 or older to join', 'error');
+      toast("Must be 18 or older to join", "error");
       return;
     }
 
     if (!agreeTerms) {
-      setErrorMessage('You must agree to the Terms of Service and Community Safety Guidelines.');
-      toast('Please accept Terms & Guidelines', 'error');
+      setErrorMessage(
+        "You must agree to the Terms of Service and Community Safety Guidelines.",
+      );
+      toast("Please accept Terms & Guidelines", "error");
       return;
     }
 
@@ -96,12 +99,18 @@ export default function RegisterPage() {
         county,
       });
 
-      toast('Karibu JamboDate! Account created successfully. Let us build your profile.', 'success');
-      router.push('/onboarding');
+      toast(
+        "Karibu JamboDate! Account created successfully. Let us build your profile.",
+        "success",
+      );
+      router.push("/onboarding");
     } catch (err: unknown) {
-      const errText = err instanceof Error ? err.message : 'Registration failed. Please try again.';
+      const errText =
+        err instanceof Error
+          ? err.message
+          : "Registration failed. Please try again.";
       setErrorMessage(errText);
-      toast(errText, 'error');
+      toast(errText, "error");
     } finally {
       setIsLoading(false);
     }
@@ -114,7 +123,7 @@ export default function RegisterPage() {
         <Link href="/" className="inline-flex items-center gap-2 mb-4">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#D85B7A] to-[#D99A52] p-0.5 flex items-center justify-center">
             <div className="w-full h-full bg-[#0D1110] rounded-[10px] flex items-center justify-center">
-              <span className="font-extrabold text-xl text-[#F5F3EF]">M</span>
+              <span className="font-extrabold text-xl text-[#F5F3EF]">J</span>
             </div>
           </div>
           <span className="text-2xl font-bold tracking-tight text-[#F5F3EF] flex items-center gap-1">
@@ -127,7 +136,8 @@ export default function RegisterPage() {
           Create Your Profile
         </h1>
         <p className="mt-2 text-xs sm:text-sm text-[#A8AAA5]">
-          A modern dating community for Kenyan singles seeking authentic connection.
+          A modern dating community for Kenyan singles seeking authentic
+          connection.
         </p>
       </div>
 
@@ -142,7 +152,12 @@ export default function RegisterPage() {
 
           <form onSubmit={handleRegister} className="space-y-4">
             {/* 1. First Name */}
-            <FormField label="First Name" id="reg-firstName" required helperText="Visible to other singles on your profile">
+            <FormField
+              label="First Name"
+              id="reg-firstName"
+              required
+              helperText="Visible to other singles on your profile"
+            >
               <div className="relative">
                 <Input
                   id="reg-firstName"
@@ -158,7 +173,12 @@ export default function RegisterPage() {
             </FormField>
 
             {/* 2. Email */}
-            <FormField label="Email Address" id="reg-email" required helperText="Used privately for secure sign-in and recovery">
+            <FormField
+              label="Email Address"
+              id="reg-email"
+              required
+              helperText="Used privately for secure sign-in and recovery"
+            >
               <div className="relative">
                 <Input
                   id="reg-email"
@@ -174,11 +194,16 @@ export default function RegisterPage() {
             </FormField>
 
             {/* 3. Password */}
-            <FormField label="Password" id="reg-password" required helperText="Minimum 8 characters">
+            <FormField
+              label="Password"
+              id="reg-password"
+              required
+              helperText="Minimum 8 characters"
+            >
               <div className="relative">
                 <Input
                   id="reg-password"
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Create a strong password"
@@ -192,7 +217,11 @@ export default function RegisterPage() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-3 text-[#A8AAA5] hover:text-[#F5F3EF] transition-colors"
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
                 </button>
               </div>
             </FormField>
@@ -210,7 +239,11 @@ export default function RegisterPage() {
                     id="reg-birthDate"
                     type="date"
                     value={birthDate}
-                    max={new Date(Date.now() - 18 * 365.25 * 24 * 3600 * 1000).toISOString().split('T')[0]}
+                    max={
+                      new Date(Date.now() - 18 * 365.25 * 24 * 3600 * 1000)
+                        .toISOString()
+                        .split("T")[0]
+                    }
                     onChange={(e) => {
                       setBirthDate(e.target.value);
                       setErrorMessage(null);
@@ -248,10 +281,10 @@ export default function RegisterPage() {
                   value={gender}
                   onChange={(e) => setGender(e.target.value as Gender)}
                   options={[
-                    { value: 'Woman', label: 'Woman' },
-                    { value: 'Man', label: 'Man' },
-                    { value: 'Non-binary', label: 'Non-binary' },
-                    { value: 'Prefer not to say', label: 'Prefer not to say' },
+                    { value: "Woman", label: "Woman" },
+                    { value: "Man", label: "Man" },
+                    { value: "Non-binary", label: "Non-binary" },
+                    { value: "Prefer not to say", label: "Prefer not to say" },
                   ]}
                 />
               </FormField>
@@ -262,7 +295,10 @@ export default function RegisterPage() {
                     id="reg-county"
                     value={county}
                     onChange={(e) => setCounty(e.target.value)}
-                    options={KENYAN_COUNTIES_CITIES.map((c) => ({ value: c, label: c }))}
+                    options={KENYAN_COUNTIES_CITIES.map((c) => ({
+                      value: c,
+                      label: c,
+                    }))}
                   />
                 </div>
               </FormField>
@@ -273,7 +309,9 @@ export default function RegisterPage() {
               <div className="p-3 rounded-xl bg-red-900/30 border border-red-700/50 text-red-200 text-xs flex items-start gap-2.5">
                 <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
                 <p>
-                  <strong>Age restriction:</strong> JamboDate requires members to be at least 18 years of age. You cannot register if you are under 18.
+                  <strong>Age restriction:</strong> JamboDate requires members
+                  to be at least 18 years of age. You cannot register if you are
+                  under 18.
                 </p>
               </div>
             )}
@@ -289,10 +327,13 @@ export default function RegisterPage() {
                   required
                 />
                 <span>
-                  I certify that I am at least 18 years old and agree to the{' '}
-                  <Link href="/safety" className="text-[#D85B7A] hover:underline">
+                  I certify that I am at least 18 years old and agree to the{" "}
+                  <Link
+                    href="/safety"
+                    className="text-[#D85B7A] hover:underline"
+                  >
                     JamboDate Community Safety Guidelines
-                  </Link>{' '}
+                  </Link>{" "}
                   and Privacy Policy.
                 </span>
               </label>
@@ -306,15 +347,19 @@ export default function RegisterPage() {
               disabled={!userIsAdult}
               isLoading={isLoading}
             >
-              Continue to 7-Step Onboarding <ArrowRight className="w-4 h-4 ml-1" />
+              Continue to 7-Step Onboarding{" "}
+              <ArrowRight className="w-4 h-4 ml-1" />
             </Button>
           </form>
 
           {/* Switch to Login */}
           <div className="mt-6 pt-6 border-t border-[#272D2A] text-center">
             <p className="text-xs text-[#A8AAA5]">
-              Already have a JamboDate account?{' '}
-              <Link href="/login" className="font-semibold text-[#D85B7A] hover:underline">
+              Already have a JamboDate account?{" "}
+              <Link
+                href="/login"
+                className="font-semibold text-[#D85B7A] hover:underline"
+              >
                 Sign in here
               </Link>
             </p>
@@ -324,7 +369,9 @@ export default function RegisterPage() {
         {/* Trust badge */}
         <div className="mt-6 flex items-center justify-center gap-2 text-xs text-[#A8AAA5]/80">
           <ShieldCheck className="w-4 h-4 text-[#3FAF72]" />
-          <span>Private contact data is never exposed publicly on profiles</span>
+          <span>
+            Private contact data is never exposed publicly on profiles
+          </span>
         </div>
       </div>
     </div>

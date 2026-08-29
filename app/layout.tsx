@@ -5,6 +5,11 @@ import { ClientProviders } from '@/components/providers/ClientProviders';
 export const metadata: Metadata = {
   title: 'JamboDate | Real People. Meaningful Connections',
   description: 'A modern, trustworthy dating platform designed for Kenyan singles seeking genuine, meaningful connections.',
+  icons: {
+    icon: '/favicon.svg',
+    apple: '/apple-touch-icon.png',
+  },
+  manifest: '/manifest.webmanifest',
   openGraph: {
     title: 'JamboDate | Real People. Meaningful Connections',
     description: 'A modern, trustworthy dating platform designed for Kenyan singles seeking genuine, meaningful connections.',
