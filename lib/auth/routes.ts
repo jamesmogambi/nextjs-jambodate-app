@@ -15,10 +15,8 @@
  * NOTE: This manifest is client-compatible but intentionally framework
  * agnostic so it can be consumed by a future Next.js middleware once the
  * app moves to server-side sessions (Firebase session cookies). Today,
- * JamboDate runs in dual-mode (real Firebase Auth sessions *and* a
- * localStorage-backed demo session that has no server token), therefore
- * enforcement lives in client-side route guards integrated with
- * `AuthContext`, which can evaluate both session kinds.
+ * JamboDate runs on real Firebase Auth sessions only, so enforcement lives
+ * in client-side route guards integrated with `AuthContext`.
  */
 
 export const LOGIN_ROUTE = '/login';

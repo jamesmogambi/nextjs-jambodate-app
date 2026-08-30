@@ -11,7 +11,7 @@ interface ProtectedRouteProps {
   requireOnboarding?: boolean;
   /**
    * Route to send an authenticated user to once their onboarding is finished.
-   * Used on the onboarding page itself so completed / demo sessions are
+   * Used on the onboarding page itself so completed / onboarded sessions are
    * redirected away from the onboarding wizard instead of looping.
    */
   completedRedirect?: string;
@@ -34,8 +34,8 @@ export function ProtectedRoute({
       return;
     }
 
-    // The onboarding page: if the user has already finished onboarding (or is a
-    // demo session without an explicit incomplete flag), bounce them to the app.
+    // The onboarding page: if the user has already finished onboarding,
+    // bounce them to the app.
     if (completedRedirect && currentUser.onboardingCompleted !== false) {
       router.replace(completedRedirect);
       return;

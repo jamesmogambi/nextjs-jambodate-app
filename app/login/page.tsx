@@ -92,16 +92,6 @@ function LoginForm() {
     }
   };
 
-  {
-    /* Quick Demo Selector for fast evaluation - temporarily disabled
-  const handleQuickDemoLogin = (profileId: string, demoEmail: string) => {
-    switchUser(profileId);
-    toast(`Logged in as demo user`, 'info');
-    router.push(redirectUrl);
-  };
-  */
-  }
-
   return (
     <div className="min-h-screen bg-[#0D1110] text-[#F5F3EF] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 relative">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
@@ -208,38 +198,7 @@ function LoginForm() {
             >
               Sign In to JamboDate <ArrowRight className="w-4 h-4 ml-1" />
             </Button>
-          </form>
-
-          {/* Quick Demo Selector for fast evaluation - temporarily disabled
-          <div className="mt-8 pt-6 border-t border-[#272D2A]">
-            <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#D99A52] mb-3">
-              <Sparkles className="w-3.5 h-3.5" /> Quick Demo Accounts for Testing
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => handleQuickDemoLogin('user_current', 'james@jambodate.xyz')}
-                className="p-2.5 rounded-xl bg-[#0D1110] border border-[#272D2A] hover:border-[#D85B7A] text-left transition-colors cursor-pointer group"
-              >
-                <p className="text-xs font-semibold text-[#F5F3EF] group-hover:text-[#D85B7A]">
-                  James Mugambi
-                </p>
-                <p className="text-[10px] text-[#A8AAA5]">Nairobi · Tech Lead · 29</p>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickDemoLogin('user_wangari', 'wangari@jambodate.xyz')}
-                className="p-2.5 rounded-xl bg-[#0D1110] border border-[#272D2A] hover:border-[#D85B7A] text-left transition-colors cursor-pointer group"
-              >
-                <p className="text-xs font-semibold text-[#F5F3EF] group-hover:text-[#D85B7A]">
-                  Wangari Kamau
-                </p>
-                <p className="text-[10px] text-[#A8AAA5]">Nairobi · Product Mgr · 28</p>
-              </button>
-            </div>
-          </div>
-          */}
+           </form>
 
           {/* Switch to Register */}
           <div className="mt-6 pt-6 border-t border-[#272D2A] text-center">

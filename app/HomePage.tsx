@@ -22,7 +22,6 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { VerificationBadge } from "@/components/ui/VerificationBadge";
-import { INITIAL_KENYAN_PROFILES } from "@/lib/data/kenyanProfiles";
 import { useAuth } from "@/lib/context/AuthContext";
 import { filterRealPhotos } from "@/lib/utils";
 

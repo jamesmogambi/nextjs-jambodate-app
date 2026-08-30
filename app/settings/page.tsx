@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import {
   Settings,
-  Shield,
+   Shield,
   Bell,
   Eye,
   LogOut,
@@ -12,7 +12,6 @@ import {
   Phone,
   CheckCircle2,
   Sliders,
-  Users,
 } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
 import { Button } from '@/components/ui/Button';
@@ -22,7 +21,7 @@ import { useAuth } from '@/lib/context/AuthContext';
 import { useToast } from '@/components/ui/Toast';
 
 export default function SettingsPage() {
-  const { currentUser, logout, switchUser, allProfiles } = useAuth();
+   const { currentUser, logout } = useAuth();
   const { toast } = useToast();
 
   const [minAge, setMinAge] = useState(21);
@@ -178,59 +177,7 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Demo Switcher for fast evaluation */}
-        <div className="p-6 rounded-2xl bg-[#151A18] border border-[#272D2A] space-y-3">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-[#F5F3EF] flex items-center gap-2">
-            <Users className="w-4 h-4 text-[#D99A52]" /> Switch Demo Persona
-          </h3>
-          <p className="text-xs text-[#A8AAA5]">
-            Switch profiles instantly to evaluate mutual likes, chat bubbles, and matching from both sides:
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                switchUser('user_current');
-                toast('Switched to James Mugambi (Nairobi)', 'info');
-              }}
-            >
-              James Mugambi (Nairobi)
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                switchUser('user_wangari');
-                toast('Switched to Wangari Kamau (Nairobi)', 'info');
-              }}
-            >
-              Wangari Kamau (Nairobi)
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                switchUser('user_brian');
-                toast('Switched to Brian Otieno (Nairobi)', 'info');
-              }}
-            >
-              Brian Otieno (Nairobi)
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                switchUser('user_amina');
-                toast('Switched to Amina Hassan (Mombasa)', 'info');
-              }}
-            >
-              Amina Hassan (Mombasa)
-            </Button>
-          </div>
-        </div>
-
-        {/* Account Actions */}
+       {/* Account Actions */}
         <div className="p-6 rounded-2xl bg-[#151A18] border border-[#272D2A] flex flex-col sm:flex-row items-center justify-between gap-4">
           <div>
             <h4 className="text-sm font-bold text-[#F5F3EF]">Sign Out</h4>

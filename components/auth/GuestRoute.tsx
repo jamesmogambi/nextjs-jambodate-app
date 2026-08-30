@@ -16,12 +16,8 @@ interface GuestRouteProps {
  *
  * Authenticated users are redirected to `destination` so they do not see the
  * sign-in/sign-up forms. The check is driven by a real Firebase session
- * (`firebaseUser`) rather than the demo session: JamboDate's demo/preview mode
- * is always present as a `currentUser` without a Firebase token, so gating on
- * `currentUser` would wrongly bounce demo users (and fresh visitors) away from
- * the authentication pages and make it impossible to sign in with a real
- * account. A genuine Firebase session is the authoritative "logged in" signal
- * for public auth pages.
+ * (`firebaseUser`), which is the authoritative "logged in" signal for public
+ * auth pages.
  */
 export function GuestRoute({ children, destination = DEFAULT_APP_ROUTE }: GuestRouteProps) {
   const router = useRouter();

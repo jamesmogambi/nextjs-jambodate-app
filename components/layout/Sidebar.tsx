@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  Compass,
+   Compass,
   Heart,
   Sparkles,
   MessageCircle,
@@ -13,7 +13,6 @@ import {
   Settings,
   ShieldAlert,
   LogOut,
-  Users,
   Rocket,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -27,7 +26,7 @@ import { BOOST_PLAN_MAP } from '@/lib/boost/config';
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { currentUser, matches, logout, switchUser, allProfiles, profileCompletion, likesReceived, matchesCount } = useAuth();
+   const { currentUser, matches, logout, allProfiles, profileCompletion, likesReceived, matchesCount } = useAuth();
   const [isBoostModalOpen, setIsBoostModalOpen] = useState(false);
   const boostActive = currentUser
     ? isBoostActive(currentUser.boostActive, currentUser.boostExpiresAt)
@@ -198,26 +197,6 @@ export function Sidebar() {
           })}
         </div>
 
-        {/* Demo Switcher for ease of testing */}
-        {/*
-        <div className="pt-4 border-t border-[#272D2A]">
-          <p className="px-3.5 text-[10px] font-bold uppercase tracking-wider text-[#A8AAA5]/60 mb-2 flex items-center gap-1">
-            <Users className="w-3 h-3" /> Switch Demo Account
-          </p>
-          <div className="px-1">
-            <select
-              value={currentUser?.id || 'user_current'}
-              onChange={(e) => switchUser(e.target.value)}
-              className="w-full text-xs bg-[#0D1110] border border-[#272D2A] text-[#A8AAA5] rounded-xl px-3 py-2 focus:outline-none focus:border-[#D85B7A] cursor-pointer"
-            >
-              <option value="user_current">James Mugambi (Active Demo User)</option>
-              <option value="user_wangari">Wangari Kamau (Nairobi)</option>
-              <option value="user_brian">Brian Otieno (Nairobi)</option>
-              <option value="user_amina">Amina Hassan (Mombasa)</option>
-            </select>
-          </div>
-        </div>
-        */}
       </div>
 
       {/* Profile Completion Indicator */}
