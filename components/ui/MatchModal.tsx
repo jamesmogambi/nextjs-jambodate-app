@@ -25,7 +25,7 @@ export function MatchModal({
   return (
     <div
       id={id}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in zoom-in-95 duration-200"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in zoom-in-95 duration-200"
     >
       <div className="relative w-full max-w-md bg-[#151A18] border border-[#272D2A] rounded-3xl p-8 text-center shadow-2xl overflow-hidden">
         {/* Subtle decorative glow */}

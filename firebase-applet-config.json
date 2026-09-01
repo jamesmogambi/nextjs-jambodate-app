@@ -1,12 +1,10 @@
 {
-  "projectId": "saisa-motors",
-  "appId": "1:580628464970:web:6e993e3fdc839a9f92edb3",
-  "apiKey": "AIzaSyCC7eKCRaHRYBrMj46_wpbFifVag4HL55s",
-  "authDomain": "saisa-motors.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-moyo-af7f00be-46d4-4a75-a9dd-502cbe7b1b7c",
-  "storageBucket": "saisa-motors.firebasestorage.app",
-  "messagingSenderId": "580628464970",
-  "measurementId": "",
-  "oAuthClientId": "580628464970-dnav8te2g5k03fhivvhl0jop5niij1n3.apps.googleusercontent.com",
-  "recaptchaSiteKey": ""
+  "projectId": "dating-app-kenya",
+  "appId": "1:660552042473:web:a70213f4fa8e368ff7ed78",
+  "apiKey": "AIzaSyAaYDgIwZGSWFn3WGI66veyrNtpns1GRzo",
+  "authDomain": "dating-app-kenya.firebaseapp.com",
+  "firestoreDatabaseId": "(default)",
+  "storageBucket": "dating-app-kenya.firebasestorage.app",
+  "messagingSenderId": "660552042473",
+  "measurementId": "G-B444SVR9TM"
 }

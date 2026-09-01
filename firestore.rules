@@ -24,9 +24,16 @@ service cloud.firestore {
       return request.resource.data;
     }
 
-    function existing() {
-      return resource.data;
-    }
+     function existing() {
+       return resource.data;
+     }
+
+     // Detects attempts to mutate boost fields client-side so that only the
+     // trusted server (Firebase Admin, which bypasses rules) can grant a boost.
+     function isBoostFieldChange() {
+       let changed = request.resource.data.diff(resource.data).affectedKeys();
+       return changed.hasAny(['boostActive', 'boostPlan', 'boostStartedAt', 'boostExpiresAt']);
+     }
 
     // 1. Private User Collection (Strict PII isolation: email, real identity)
     // Only the account owner can read or write their private account doc.
@@ -36,9 +43,30 @@ service cloud.firestore {
       allow create: if isOwner(userId) 
                     && isValidId(userId)
                     && incoming().uid == request.auth.uid;
-      allow update: if isOwner(userId) 
-                    && incoming().uid == existing().uid;
+       allow update: if isOwner(userId) 
+                    && incoming().uid == existing().uid
+                    && !isBoostFieldChange();
       allow delete: if isOwner(userId);
+
+      // Likes received by this user: written by the member who liked them.
+      match /likes_received/{likeId} {
+        allow create: if isSignedIn()
+                      && isValidId(likeId)
+                      && incoming().fromUserId == request.auth.uid
+                      && incoming().toUserId == userId;
+        allow list, get: if isOwner(userId);
+        allow update, delete: if false;
+      }
+
+      // Likes sent by this user: written by the member who sent the like.
+      match /likes_sent/{likeId} {
+        allow create: if isOwner(userId)
+                      && isValidId(likeId)
+                      && incoming().fromUserId == userId
+                      && incoming().toUserId is string;
+        allow list, get: if isOwner(userId);
+        allow update, delete: if false;
+      }
     }
 
     // 2. Public Dating Profiles (Readable by signed in users, writable only by owner)
@@ -49,7 +77,8 @@ service cloud.firestore {
                     && isValidId(profileId)
                     && incoming().uid == request.auth.uid;
       allow update: if isOwner(profileId) 
-                    && incoming().uid == existing().uid;
+                    && incoming().uid == existing().uid
+                    && !isBoostFieldChange();
       allow delete: if isOwner(profileId);
     }
 
@@ -77,6 +106,30 @@ service cloud.firestore {
                     && incoming().userId == request.auth.uid;
       allow delete: if isSignedIn() 
                     && existing().userId == request.auth.uid;
+    }
+
+    // 5. Verification Requests (Owner submits their own docs; admin-only moderation handled server-side)
+    match /verification_requests/{verificationId} {
+      allow create: if isSignedIn()
+                    && isValidId(verificationId)
+                    && incoming().userId == request.auth.uid
+                    && incoming().status == 'pending';
+      allow get, list: if isSignedIn()
+                    && resource.data.userId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // 6. Boost purchase history (admin/server-only writes; owner can read own history)
+    match /boosts/{boostId} {
+      allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
+      // creation/update/deletion only happens via the trusted server (Admin SDK).
+      allow list: if false;
+      allow create, update, delete: if false;
+    }
+
+    // 7. Boost payment intents (server-only; never written/read by clients directly)
+    match /boost_payments/{paymentId} {
+      allow read, write: if false;
     }
   }
 }

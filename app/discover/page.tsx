@@ -19,6 +19,7 @@ import { EmptyState } from '@/components/ui/StateFeedback';
 import { useAuth } from '@/lib/context/AuthContext';
 import { useToast } from '@/components/ui/Toast';
 import { KENYAN_COUNTIES_CITIES, RELATIONSHIP_INTENTIONS } from '@/lib/data/kenyanProfiles';
+import { computeDiscoveryScore } from '@/lib/boost/boostUtils';
 
 export default function DiscoverPage() {
   const { allProfiles, currentUser, likes, passes, blocks, likeProfile, passProfile } = useAuth();
@@ -33,24 +34,32 @@ export default function DiscoverPage() {
 
   // Available discovery candidates (excluding current user, already liked, passed, or blocked)
   const candidateProfiles = useMemo(() => {
-    return allProfiles.filter((p) => {
-      if (!currentUser) return true;
-      if (p.id === currentUser.id) return false;
-      if (blocks.includes(p.id)) return false;
-      if (likes.includes(p.id)) return false;
-      if (passes.includes(p.id)) return false;
+    return allProfiles
+      .filter((p) => {
+        if (!currentUser) return true;
+        if (p.id === currentUser.id) return false;
+        if (blocks.includes(p.id)) return false;
+        if (likes.includes(p.id)) return false;
+        if (passes.includes(p.id)) return false;
 
-      if (selectedIntention !== 'all' && p.relationshipIntention !== selectedIntention) {
-        return false;
-      }
-      if (selectedCounty !== 'all' && !p.location.toLowerCase().includes(selectedCounty.toLowerCase())) {
-        return false;
-      }
-      if (verifiedOnly && p.verificationStatus !== 'verified') {
-        return false;
-      }
-      return true;
-    });
+        if (selectedIntention !== 'all' && p.relationshipIntention !== selectedIntention) {
+          return false;
+        }
+        if (selectedCounty !== 'all' && !p.location.toLowerCase().includes(selectedCounty.toLowerCase())) {
+          return false;
+        }
+        if (verifiedOnly && p.verificationStatus !== 'verified') {
+          return false;
+        }
+        return true;
+      })
+      // Rank candidates by discovery score. Actively boosted profiles receive
+      // a ranking bonus (increased visibility) but are not permanently pinned —
+      // non-boosted ties are broken randomly so order stays varied.
+      .sort((a, b) => {
+        const diff = computeDiscoveryScore(b) - computeDiscoveryScore(a);
+        return diff !== 0 ? diff : Math.random() - 0.5;
+      });
   }, [allProfiles, currentUser, likes, passes, blocks, selectedIntention, selectedCounty, verifiedOnly]);
 
   const currentProfile = candidateProfiles[currentIndex] || null;

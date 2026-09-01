@@ -22,6 +22,7 @@ import { Modal } from './Modal';
 import { Button } from './Button';
 import { ReportModal } from './ReportModal';
 import { cn } from '@/lib/utils';
+import { filterRealPhotos } from '@/lib/utils';
 
 interface ProfileCardProps {
   profile: UserProfile;
@@ -44,8 +45,9 @@ export function ProfileCard({
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
 
-  const photos = profile.photos && profile.photos.length > 0
-    ? profile.photos
+  const realPhotos = filterRealPhotos(profile.photos || []);
+  const photos = realPhotos.length > 0
+    ? realPhotos
     : ['https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80'];
 
   const nextPhoto = (e: React.MouseEvent) => {

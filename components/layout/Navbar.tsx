@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { Heart, Menu, X, Shield, Sparkles } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
+import React, { useState } from "react";
+import Link from "next/link";
+import { Heart, Menu, X, Shield, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -26,16 +26,28 @@ export function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-[#A8AAA5]">
-            <a href="#how-it-works" className="hover:text-[#F5F3EF] transition-colors">
+            <a
+              href="#how-it-works"
+              className="hover:text-[#F5F3EF] transition-colors"
+            >
               How It Works
             </a>
-            <a href="#intentions" className="hover:text-[#F5F3EF] transition-colors">
+            <a
+              href="#intentions"
+              className="hover:text-[#F5F3EF] transition-colors"
+            >
               Intentions
             </a>
-            <a href="#safety" className="hover:text-[#F5F3EF] transition-colors flex items-center gap-1">
+            <a
+              href="#safety"
+              className="hover:text-[#F5F3EF] transition-colors flex items-center gap-1"
+            >
               <Shield className="w-3.5 h-3.5 text-[#3FAF72]" /> Safety First
             </a>
-            <a href="#premium" className="hover:text-[#F5F3EF] transition-colors flex items-center gap-1">
+            <a
+              href="#boost"
+              className="hover:text-[#F5F3EF] transition-colors flex items-center gap-1"
+            >
               <Sparkles className="w-3.5 h-3.5 text-[#D99A52]" /> JamboDate Gold
             </a>
             <a href="#faq" className="hover:text-[#F5F3EF] transition-colors">
@@ -69,7 +81,11 @@ export function Navbar() {
               className="p-2 rounded-xl border border-[#272D2A] text-[#A8AAA5] hover:text-[#F5F3EF] hover:bg-[#151A18] transition-colors"
               aria-label="Toggle navigation menu"
             >
-              {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {isOpen ? (
+                <X className="w-5 h-5" />
+              ) : (
+                <Menu className="w-5 h-5" />
+              )}
             </button>
           </div>
         </div>

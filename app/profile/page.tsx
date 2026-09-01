@@ -13,17 +13,40 @@ import {
   Eye,
   Settings,
   Sparkles,
+  Clock,
+  XCircle,
+  Rocket,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
 import { useAuth } from '@/lib/context/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { BoostModal } from '@/components/boost/BoostModal';
+import { isBoostActive, toDate } from '@/lib/boost/boostUtils';
+import { trackEvent } from '@/lib/analytics';
 import { VerificationBadge } from '@/components/ui/VerificationBadge';
 import { ProfileCard } from '@/components/ui/ProfileCard';
+import { filterRealPhotos } from '@/lib/utils';
+
+const VERIFICATION_CALLTOACTION: Record<string, { label: string; variant: 'green' | 'primary' }> = {
+  unverified: { label: 'Start Verification', variant: 'green' },
+  rejected: { label: 'Resubmit Documents', variant: 'primary' },
+  pending: { label: 'View Submission', variant: 'primary' },
+  verified: { label: 'View Badge', variant: 'primary' },
+};
 
 export default function ProfilePage() {
   const { currentUser, profileCompletion } = useAuth();
   const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [isBoostModalOpen, setIsBoostModalOpen] = useState(false);
+
+  const boostActive = currentUser
+    ? isBoostActive(currentUser.boostActive, currentUser.boostExpiresAt)
+    : false;
+  const boostExpiresAt = currentUser ? toDate(currentUser.boostExpiresAt) : null;
+  const boostPlanLabel = currentUser?.boostPlan?.replace('_', ' ') ?? '';
+  const realPhotos = currentUser ? filterRealPhotos(currentUser.photos || []) : [];
 
   if (!currentUser) {
     return (
@@ -126,41 +149,146 @@ export default function ProfilePage() {
               )}
             </div>
 
-            {/* Verification Status Callout */}
-            {currentUser.verificationStatus !== 'verified' && (
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-[#3FAF72]/15 via-[#151A18] to-[#151A18] border border-[#3FAF72]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#3FAF72]/20 flex items-center justify-center text-[#3FAF72] shrink-0">
-                    <ShieldCheck className="w-5 h-5" />
+            {/* Verification Status Callout — dynamic by current status */}
+            {(() => {
+              const status = currentUser.verificationStatus;
+              const icon =
+                status === 'pending' ? <Clock className="w-5 h-5" /> :
+                status === 'rejected' ? <XCircle className="w-5 h-5" /> :
+                <ShieldCheck className="w-5 h-5" />;
+              const iconWrap =
+                status === 'pending'
+                  ? 'bg-[#D99A52]/20 text-[#D99A52]'
+                  : status === 'rejected'
+                  ? 'bg-red-500/20 text-red-400'
+                  : 'bg-[#3FAF72]/20 text-[#3FAF72]';
+              const border =
+                status === 'pending'
+                  ? 'border-[#D99A52]/30'
+                  : status === 'rejected'
+                  ? 'border-red-500/30'
+                  : 'border-[#3FAF72]/30';
+              const gradientFrom =
+                status === 'pending'
+                  ? 'from-[#D99A52]/15'
+                  : status === 'rejected'
+                  ? 'from-red-500/15'
+                  : 'from-[#3FAF72]/15';
+
+              let heading: React.ReactNode;
+              let message: string;
+              if (status === 'verified') {
+                heading = (
+                  <VerificationBadge status={status} showText />
+                );
+                message = 'Your identity is confirmed. Enjoy priority discovery and the trusted badge on your cards.';
+              } else if (status === 'pending') {
+                heading = <h3 className="text-sm font-bold text-[#F5F3EF]">Verification In Review</h3>;
+                message = 'Our Nairobi moderation team is reviewing your documents. Reviews conclude in a few hours.';
+              } else if (status === 'rejected') {
+                heading = <h3 className="text-sm font-bold text-red-400">Verification Needs Resubmission</h3>;
+                message = 'Your documents couldn‘t be confirmed. Please resubmit clearer photos.';
+              } else {
+                heading = <h3 className="text-sm font-bold text-[#F5F3EF]">Get Verified on JamboDate</h3>;
+                message = 'Verified singles receive 3x more meaningful connections and unlock trusted status.';
+              }
+
+              const cta = VERIFICATION_CALLTOACTION[status] ?? VERIFICATION_CALLTOACTION.unverified;
+              const showCta = status !== 'verified' && status !== 'pending';
+
+              return (
+                <div
+                  className={`p-4 rounded-2xl bg-gradient-to-r ${gradientFrom} via-[#151A18] to-[#151A18] border ${border} flex flex-col sm:flex-row sm:items-center justify-between gap-4`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`w-10 h-10 rounded-xl ${iconWrap} flex items-center justify-center shrink-0`}>
+                      {icon}
+                    </div>
+                    <div>
+                      {heading}
+                      <p className="text-xs text-[#A8AAA5] mt-1">{message}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-[#F5F3EF]">
-                      Get Verified on JamboDate
-                    </h3>
-                    <p className="text-xs text-[#A8AAA5]">
-                      Verified singles receive 3x more meaningful connections and unlock trusted status.
-                    </p>
-                  </div>
+                  {showCta && (
+                    <Link href="/verification" className="shrink-0">
+                      <Button variant={cta.variant} size="sm">{cta.label}</Button>
+                    </Link>
+                  )}
+                  {status === 'pending' && (
+                    <div className="shrink-0">
+                      <VerificationBadge status={status} showText />
+                    </div>
+                  )}
                 </div>
-                <Link href="/verification" className="shrink-0">
-                  <Button variant="green" size="sm">
-                    Start Verification
-                  </Button>
-                </Link>
+              );
+            })()}
+
+            {/* Boost Your Profile Callout */}
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-[#D85B7A]/15 via-[#151A18] to-[#151A18] border border-[#D85B7A]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#D85B7A]/20 flex items-center justify-center text-[#D85B7A] shrink-0">
+                  <Rocket className="w-5 h-5" />
+                </div>
+                <div>
+                  {boostActive ? (
+                    <>
+                      <h3 className="text-sm font-bold text-[#D99A52] flex items-center gap-1.5">
+                        🔥 Boost Active
+                      </h3>
+                      <p className="text-xs text-[#A8AAA5]">
+                        Your profile is currently getting increased visibility in Discovery.
+                      </p>
+                      {boostExpiresAt && (
+                        <p className="text-[10px] text-[#E5AF72] mt-0.5">
+                          Expires: {boostExpiresAt.toLocaleString('en-KE', { timeZone: 'Africa/Nairobi' })}
+                          {boostPlanLabel && ` · ${boostPlanLabel}`}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <h3 className="text-sm font-bold text-[#F5F3EF]">
+                        Boost Your Profile
+                      </h3>
+                      <p className="text-xs text-[#A8AAA5]">
+                        Get more visibility and increase your chances of getting matches. Starts at KSh 100.
+                      </p>
+                    </>
+                  )}
+                </div>
               </div>
-            )}
+              {!boostActive && (
+                <button
+                  onClick={() => {
+                    setIsBoostModalOpen(true);
+                    trackEvent('boost_viewed', { source: 'profile_page' });
+                  }}
+                  className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#D85B7A] to-[#D99A52] text-[#0D1110] text-sm font-bold shadow-md shadow-[#D85B7A]/15 hover:from-[#c04a68] hover:to-[#C88A42] transition-all cursor-pointer"
+                >
+                  <Rocket className="w-3.5 h-3.5" /> Boost Now
+                </button>
+              )}
+            </div>
+
+            <BoostModal isOpen={isBoostModalOpen} onClose={() => setIsBoostModalOpen(false)} />
 
             {/* Profile Overview Card */}
             <div className="bg-[#151A18] rounded-2xl border border-[#272D2A] p-6 space-y-6">
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
                 <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden border border-[#272D2A] shrink-0 bg-[#0D1110]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={currentUser.photos[0]}
-                    alt={currentUser.name}
-                    className="w-full h-full object-cover"
-                    referrerPolicy="no-referrer"
-                  />
+                  {realPhotos.length > 0 ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={realPhotos[0]}
+                      alt={currentUser.name}
+                      className="w-full h-full object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-[#A8AAA5]">
+                      <ImageIcon className="w-8 h-8" />
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-1.5 flex-1">
@@ -202,25 +330,35 @@ export default function ProfilePage() {
               <div className="pt-4 border-t border-[#272D2A]">
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="text-xs font-semibold uppercase tracking-wider text-[#A8AAA5]">
-                    Profile Photos ({currentUser.photos.length})
+                    Profile Photos ({realPhotos.length})
                   </h4>
                   <Link href="/profile/edit" className="text-xs text-[#D85B7A] hover:underline">
                     Manage Photos
                   </Link>
                 </div>
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-                  {currentUser.photos.map((p, idx) => (
-                    <div key={idx} className="aspect-[3/4] rounded-xl overflow-hidden border border-[#272D2A] bg-[#0D1110] relative">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={p} alt={`Photo ${idx + 1}`} className="w-full h-full object-cover" />
-                      {idx === 0 && (
-                        <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded bg-black/70 text-[9px] text-white">
-                          Main
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                {realPhotos.length > 0 ? (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                    {realPhotos.map((p, idx) => (
+                      <div key={idx} className="aspect-[3/4] rounded-xl overflow-hidden border border-[#272D2A] bg-[#0D1110] relative">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={p} alt={`Photo ${idx + 1}`} className="w-full h-full object-cover" />
+                        {idx === 0 && (
+                          <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded bg-black/70 text-[9px] text-white">
+                            Main
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-[#A8AAA5]">
+                    <ImageIcon className="w-10 h-10 mx-auto mb-2 opacity-40" />
+                    <p className="text-xs">No profile photos uploaded yet.</p>
+                    <Link href="/profile/edit" className="text-xs text-[#D85B7A] hover:underline mt-1 inline-block">
+                      Upload your first photo
+                    </Link>
+                  </div>
+                )}
               </div>
 
               {/* Career, Education & Languages */}

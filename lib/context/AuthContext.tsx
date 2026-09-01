@@ -10,6 +10,7 @@ import {
   MessageRecord,
   ReportRecord,
   BlockRecord,
+  LikeRecord,
   VerificationRequest,
   ReportReason,
   Gender,
@@ -19,7 +20,6 @@ import {
 import {
   auth,
   db,
-  storage,
   handleFirestoreError,
   OperationType,
 } from '@/lib/firebase';
@@ -37,11 +37,13 @@ import {
   setDoc,
   updateDoc,
   collection,
+  addDoc,
+  query,
+  orderBy,
   onSnapshot,
   getDocFromServer,
 } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { INITIAL_KENYAN_PROFILES, DEMO_CURRENT_USER } from '@/lib/data/kenyanProfiles';
+import { uploadToCloudinary, isCloudinaryConfigured, type CloudinaryUploadResult } from '@/lib/cloudinary';
 import {
   calculateAge,
   isAdult,
@@ -77,14 +79,16 @@ interface AuthContextType {
   blocks: string[];
   verificationRequests: VerificationRequest[];
   currentMatchCelebration: UserProfile | null;
+   likesReceived: number;
+  realReceivedLikers: string[];
+  matchesCount: number;
   clearMatchCelebration: () => void;
   // Core Auth Operations
   registerWithEmail: (data: RegisterPayload) => Promise<boolean>;
   loginWithEmail: (email: string, password?: string) => Promise<boolean>;
   sendPasswordReset: (email: string) => Promise<void>;
-  logout: () => Promise<void>;
-  switchUser: (profileId: string) => void;
-  // Profile & Onboarding Operations
+   logout: () => Promise<void>;
+   // Profile & Onboarding Operations
   updateProfile: (data: Partial<UserProfile>) => Promise<void>;
   updatePreferences: (data: Partial<UserPreferences>) => Promise<void>;
   completeOnboarding: (
@@ -99,7 +103,8 @@ interface AuthContextType {
   blockUser: (targetProfileId: string) => void;
   reportUser: (targetProfileId: string, reason: ReportReason, details?: string) => void;
   unmatchUser: (matchId: string) => void;
-  requestVerification: (selfieUrl: string, idDocumentUrl?: string) => void;
+  requestVerification: (selfieUrl: string, idDocumentUrl?: string) => Promise<void>;
+  getIdToken: () => Promise<string | null>;
   adminApproveVerification: (requestId: string) => void;
   adminRejectVerification: (requestId: string) => void;
   adminToggleSuspend: (userId: string) => void;
@@ -122,6 +127,15 @@ const STORAGE_KEYS = {
   USER_ACCOUNT: 'jambodate_user_account',
 };
 
+async function readFileAsDataURL(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
@@ -131,8 +145,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   // Social & Matching state
-  const [allProfiles, setAllProfiles] = useState<UserProfile[]>(INITIAL_KENYAN_PROFILES);
-  const [likes, setLikes] = useState<string[]>(['user_amina']);
+  const [allProfiles, setAllProfiles] = useState<UserProfile[]>([]);
+  const [likes, setLikes] = useState<string[]>([]);
   const [passes, setPasses] = useState<string[]>([]);
   const [matches, setMatches] = useState<MatchRecord[]>([]);
   const [messages, setMessages] = useState<Record<string, MessageRecord[]>>({});
@@ -141,14 +155,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [verificationRequests, setVerificationRequests] = useState<VerificationRequest[]>([]);
   const [currentMatchCelebration, setCurrentMatchCelebration] = useState<UserProfile | null>(null);
 
+   // Firestore-backed like/match counts for authenticated users
+   const [realReceivedLikers, setRealReceivedLikers] = useState<string[]>([]);
+  const [realSentLikers, setRealSentLikers] = useState<string[]>([]);
+
   // Test connection to Firestore on initialization
   useEffect(() => {
     async function testConnection() {
       try {
         await getDocFromServer(doc(db, 'test', 'connection'));
       } catch (error) {
-        if (error instanceof Error && error.message.includes('the client is offline')) {
-          console.error('Please check your Firebase configuration.');
+        console.error('Firebase configuration check failed. Error:', error);
+        const message = error instanceof Error ? error.message : String(error);
+        if (
+          message.includes('the client is offline') ||
+          message.includes('Could not reach') ||
+          message.includes('UNAVAILABLE') ||
+          message.includes('NOT_FOUND')
+        ) {
+          console.error(
+            'Please check your Firebase configuration. Verify your NEXT_PUBLIC_FIREBASE_* env vars and Firestore database ID.'
+          );
         }
       }
     }
@@ -162,7 +189,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (storedProfiles) {
         setAllProfiles(JSON.parse(storedProfiles));
       } else {
-        setAllProfiles(INITIAL_KENYAN_PROFILES);
+        setAllProfiles([]);
       }
 
       const storedLikes = localStorage.getItem(STORAGE_KEYS.LIKES);
@@ -176,39 +203,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (storedMatches && storedMessages) {
         setMatches(JSON.parse(storedMatches));
         setMessages(JSON.parse(storedMessages));
-      } else {
-        const initialMatchId = 'match_james_wangari';
-        const initialMatch: MatchRecord = {
-          id: initialMatchId,
-          users: ['user_current', 'user_wangari'],
-          lastMessage: 'Karibu JamboDate! Would love to hear about your Karura trails.',
-          lastMessageAt: new Date(Date.now() - 3600000).toISOString(),
-          lastMessageSenderId: 'user_wangari',
-          createdAt: new Date(Date.now() - 86400000).toISOString(),
-          unreadCountByUser: { user_current: 1 },
-        };
-        const initialMsgs: MessageRecord[] = [
-          {
-            id: 'msg_1',
-            matchId: initialMatchId,
-            senderId: 'user_current',
-            recipientId: 'user_wangari',
-            text: 'Habari Wangari! Loved your note on Chemex brews. Have you tried the washed beans from Nyeri?',
-            createdAt: new Date(Date.now() - 7200000).toISOString(),
-            isRead: true,
-          },
-          {
-            id: 'msg_2',
-            matchId: initialMatchId,
-            senderId: 'user_wangari',
-            recipientId: 'user_current',
-            text: 'Habari James! Yes! The SL-28 lot from Othaya is exceptional. What are your favorite trails at Karura?',
-            createdAt: new Date(Date.now() - 3600000).toISOString(),
-            isRead: false,
-          },
-        ];
-        setMatches([initialMatch]);
-        setMessages({ [initialMatchId]: initialMsgs });
       }
 
       const storedReports = localStorage.getItem(STORAGE_KEYS.REPORTS);
@@ -292,26 +286,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setIsLoading(false);
         }
       } else {
-        // No Firebase user authenticated
-        // Check if there is a demo user active in localStorage
-        const storedUser = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
-        if (storedUser) {
-          try {
-            const parsed = JSON.parse(storedUser);
-            // If it's a demo account (e.g. user_current, user_wangari), keep it active for testing
-            if (parsed.id?.startsWith('user_')) {
-              setCurrentUser(parsed);
-            } else {
-              setCurrentUser(null);
-            }
-          } catch {
-            setCurrentUser(null);
-          }
-        } else {
-          // Default to James Mugambi for initial preview if no user exists
-          setCurrentUser(DEMO_CURRENT_USER);
-          localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(DEMO_CURRENT_USER));
-        }
+        // No Firebase user authenticated: no active session. Real sessions are
+        // restored from Firestore in the branch above, so stale localStorage is
+        // ignored and private routes redirect unauthenticated visitors to home.
+        setCurrentUser(null);
+        setUserAccount(null);
+        setUserPreferences(null);
         setIsLoading(false);
       }
     });
@@ -323,10 +303,59 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // Save social state changes
+   // Profiles subscription: surface real profiles from Firestore for authenticated users
+   useEffect(() => {
+    if (!firebaseUser) return undefined;
+
+    const q = query(collection(db, 'profiles'), orderBy('createdAt', 'desc'));
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const realProfiles = snapshot.docs.map((docSnap) => docSnap.data() as UserProfile);
+        setAllProfiles(realProfiles);
+      },
+      (error) => {
+        console.warn('Real profiles subscription error:', error);
+      }
+    );
+
+    return unsubscribe;
+  }, [firebaseUser]);
+
+  // Real likes/matches counts subscription (authenticated users only).
+  // Per-user subcollections keep the data private to the account owner.
+  useEffect(() => {
+    if (!firebaseUser) return undefined;
+
+    const uid = firebaseUser.uid;
+    const unsubReceived = onSnapshot(
+      collection(db, 'users', uid, 'likes_received'),
+      (snapshot) => {
+        setRealReceivedLikers(snapshot.docs.map((d) => (d.data() as LikeRecord).fromUserId));
+      },
+      (error) => {
+        console.warn('likes_received subscription error:', error);
+      }
+    );
+    const unsubSent = onSnapshot(
+      collection(db, 'users', uid, 'likes_sent'),
+      (snapshot) => {
+        setRealSentLikers(snapshot.docs.map((d) => (d.data() as LikeRecord).toUserId));
+      },
+      (error) => {
+        console.warn('likes_sent subscription error:', error);
+      }
+    );
+
+    return () => {
+      unsubReceived();
+      unsubSent();
+    };
+  }, [firebaseUser]);
+
+   // Save social state changes
   useEffect(() => {
     if (!isLoading) {
-      localStorage.setItem(STORAGE_KEYS.ALL_PROFILES, JSON.stringify(allProfiles));
       localStorage.setItem(STORAGE_KEYS.LIKES, JSON.stringify(likes));
       localStorage.setItem(STORAGE_KEYS.PASSES, JSON.stringify(passes));
       localStorage.setItem(STORAGE_KEYS.MATCHES, JSON.stringify(matches));
@@ -335,10 +364,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem(STORAGE_KEYS.BLOCKS, JSON.stringify(blocks));
       localStorage.setItem(STORAGE_KEYS.VERIFICATIONS, JSON.stringify(verificationRequests));
     }
-  }, [allProfiles, likes, passes, matches, messages, reports, blocks, verificationRequests, isLoading]);
+  }, [allProfiles, likes, passes, matches, messages, reports, blocks, verificationRequests, isLoading, firebaseUser]);
 
   // Profile completion calculation
   const profileCompletion = calculateProfileCompletion(currentUser, userPreferences);
+
+   // Firestore-backed like/match counts for authenticated users
+   const likesReceived = realReceivedLikers.length;
+   const matchesCount = realReceivedLikers.filter((id) => realSentLikers.includes(id)).length;
+
+  const getIdToken = useCallback(async (): Promise<string | null> => {
+    if (!firebaseUser) return null;
+    try {
+      return await firebaseUser.getIdToken();
+    } catch {
+      return null;
+    }
+  }, [firebaseUser]);
 
   // 1. Registration with Email, Password & Kenyan Verification
   const registerWithEmail = async (data: RegisterPayload): Promise<boolean> => {
@@ -451,30 +493,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loginWithEmail = async (email: string, password?: string): Promise<boolean> => {
     setAuthError(null);
 
-    // Fast-path demo users for instantaneous local testing if demo credentials provided
-    if (password === 'demo' || !password || email.includes('demo') || email.includes('example.com')) {
-      if (email.toLowerCase().includes('wangari')) {
-        const wangari = allProfiles.find((p) => p.id === 'user_wangari') || INITIAL_KENYAN_PROFILES[0];
-        setCurrentUser(wangari);
-        localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(wangari));
-        return true;
-      }
-      if (email.toLowerCase().includes('brian')) {
-        const brian = allProfiles.find((p) => p.id === 'user_brian') || INITIAL_KENYAN_PROFILES[1];
-        setCurrentUser(brian);
-        localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(brian));
-        return true;
-      }
-      if (email.toLowerCase().includes('james')) {
-        setCurrentUser(DEMO_CURRENT_USER);
-        localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(DEMO_CURRENT_USER));
-        return true;
-      }
+    if (!email.trim() || !password) {
+      const message = 'Please enter your email address and password.';
+      setAuthError(message);
+      throw new Error(message);
     }
 
     try {
-      const pwd = password || 'password123';
-      const cred = await signInWithEmailAndPassword(auth, email.trim(), pwd);
+      const cred = await signInWithEmailAndPassword(auth, email.trim(), password);
       const uid = cred.user.uid;
 
       // Fetch profile
@@ -490,13 +516,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       return true;
     } catch (err: unknown) {
-      // If user doesn't exist in Firebase yet but email is a demo user, let them in
-      if (email.toLowerCase().includes('james') || email.toLowerCase().includes('wangari')) {
-        const profile = email.toLowerCase().includes('wangari') ? INITIAL_KENYAN_PROFILES[0] : DEMO_CURRENT_USER;
-        setCurrentUser(profile);
-        localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(profile));
-        return true;
-      }
       const message = err instanceof Error ? err.message : 'Login failed';
       setAuthError(message);
       throw err;
@@ -524,21 +543,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
   };
 
-  // 5. Switch Demo Account (Testing helper)
-  const switchUser = (profileId: string) => {
-    if (profileId === 'user_current') {
-      setCurrentUser(DEMO_CURRENT_USER);
-      localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(DEMO_CURRENT_USER));
-      return;
-    }
-    const found = allProfiles.find((p) => p.id === profileId);
-    if (found) {
-      setCurrentUser(found);
-      localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(found));
-    }
-  };
-
-  // 6. Update Profile
+  // 5. Update Profile
   const updateProfile = async (data: Partial<UserProfile>): Promise<void> => {
     if (!currentUser) return;
     const updated: UserProfile = {
@@ -580,50 +585,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // 8. Photo Upload with Firebase Storage
+  // 8. Photo Upload with Cloudinary
   const uploadPhoto = async (file: File, index: number): Promise<string> => {
     const uid = firebaseUser?.uid || currentUser?.uid || 'user_demo';
     const timestamp = Date.now();
     const cleanName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
-    const storagePath = `users/${uid}/photos/${timestamp}_${cleanName}`;
 
     try {
-      // 1. Try Firebase Storage upload
-      const storageReference = ref(storage, storagePath);
-      const uploadResult = await uploadBytes(storageReference, file);
-      const downloadUrl = await getDownloadURL(uploadResult.ref);
+      // 1. Try Cloudinary upload
+      if (isCloudinaryConfigured()) {
+        const cloudinaryFolder = `jamboDate_profiles/${uid}`;
+        const result: CloudinaryUploadResult = await uploadToCloudinary(
+          file,
+          cloudinaryFolder
+        );
 
-      // 2. Create photo document in `photos` collection
-      if (firebaseUser?.uid) {
-        const photoDocId = `photo_${timestamp}_${Math.random().toString(36).slice(2, 6)}`;
-        try {
-          await setDoc(doc(db, 'photos', photoDocId), {
-            id: photoDocId,
-            userId: uid,
-            url: downloadUrl,
-            storagePath,
-            orderIndex: index,
-            isPrimary: index === 0,
-            createdAt: new Date().toISOString(),
-          });
-        } catch (err) {
-          console.warn('Error writing photo document:', err);
+        // 2. Create photo document in `photos` collection
+        if (firebaseUser?.uid) {
+          const photoDocId = `photo_${timestamp}_${Math.random().toString(36).slice(2, 6)}`;
+          try {
+            await setDoc(doc(db, 'photos', photoDocId), {
+              id: photoDocId,
+              userId: uid,
+              url: result.secure_url,
+              cloudinaryPublicId: result.public_id,
+              storagePath: cloudinaryFolder,
+              orderIndex: index,
+              isPrimary: index === 0,
+              createdAt: new Date().toISOString(),
+            });
+          } catch (err) {
+            console.warn('Error writing photo document:', err);
+          }
         }
+
+        return result.secure_url;
       }
 
-      return downloadUrl;
-    } catch (storageError) {
-      console.warn('Firebase Storage upload notice, using optimized client fallback:', storageError);
-      // Fallback to high-quality compressed Data URL so user is never blocked
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const resultUrl = reader.result as string;
-          resolve(resultUrl);
-        };
-        reader.onerror = (e) => reject(e);
-        reader.readAsDataURL(file);
-      });
+      // 3. Fallback: read as Data URL so user is never blocked
+      console.warn('Cloudinary not configured, using client-side Data URL fallback');
+      return readFileAsDataURL(file);
+    } catch (error) {
+      console.error('Cloudinary upload failed, falling back to Data URL:', error);
+      return readFileAsDataURL(file);
     }
   };
 
@@ -692,47 +696,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLikes((prev) => [...prev, targetProfileId]);
     }
 
-    const targetProfile = allProfiles.find((p) => p.id === targetProfileId);
-    const isMutualCandidate = ['user_wangari', 'user_brian', 'user_sharon', 'user_faith', 'user_kevin'].includes(targetProfileId);
-
-    if (isMutualCandidate && targetProfile) {
-      const matchId = `match_${currentUser.id}_${targetProfile.id}`;
-      const alreadyMatched = matches.some(
-        (m) => m.users.includes(currentUser.id) && m.users.includes(targetProfile.id)
-      );
-
-      if (!alreadyMatched) {
-        const newMatch: MatchRecord = {
-          id: matchId,
-          users: [currentUser.id, targetProfile.id],
-          lastMessage: `You matched with ${targetProfile.name}! Say habari.`,
-          lastMessageAt: new Date().toISOString(),
-          lastMessageSenderId: targetProfile.id,
-          createdAt: new Date().toISOString(),
-          unreadCountByUser: { [currentUser.id]: 0 },
-        };
-
-        setMatches((prev) => [newMatch, ...prev]);
-        setMessages((prev) => ({
-          ...prev,
-          [matchId]: [
-            {
-              id: `msg_welcome_${Date.now()}`,
-              matchId,
-              senderId: targetProfile.id,
-              recipientId: currentUser.id,
-              text: `Habari! It's so lovely to connect with you. How is your day going?`,
-              createdAt: new Date().toISOString(),
-              isRead: false,
-            },
-          ],
-        }));
-
-        setCurrentMatchCelebration(targetProfile);
-        return { isMatch: true, matchedProfile: targetProfile };
+   // Persist like to Firestore for authenticated users so the
+   // sidebar counts reflect real activity. Best-effort — never blocks the flow.
+   if (firebaseUser && currentUser.uid === firebaseUser.uid) {
+      const likeId = `like_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+      const record: LikeRecord = {
+        id: likeId,
+        fromUserId: currentUser.uid,
+        toUserId: targetProfileId,
+        createdAt: new Date().toISOString(),
+      };
+      try {
+        await addDoc(collection(db, 'users', targetProfileId, 'likes_received'), record);
+        await addDoc(collection(db, 'users', currentUser.uid, 'likes_sent'), record);
+      } catch (err) {
+        console.warn('Failed to persist like to Firestore:', err);
       }
     }
 
+    // Real mutual matching requires a Firestore round-trip to check whether the
+    // target user has also liked the current user; that wiring is not present
+    // yet, so a like is persisted but does not immediately create a match.
     return { isMatch: false };
   };
 
@@ -776,53 +760,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           : m
       )
     );
-
-    // Friendly realistic automated simulated response for demo accounts
-    setTimeout(() => {
-      const recipientProfile = allProfiles.find((p) => p.id === recipientId);
-      if (recipientProfile) {
-        const sampleReplies = [
-          `Asante! That's really thoughtful. I completely agree with your perspective.`,
-          `Haha, definitely! Traffic on Waiyaki Way was crazy today though, hope yours was better!`,
-          `That sounds wonderful. Have you lived in Nairobi long?`,
-          `I love that. Quality time and mutual respect are everything.`,
-          `Would love to hear more over coffee sometime this weekend!`,
-        ];
-        const randomReply = sampleReplies[Math.floor(Math.random() * sampleReplies.length)];
-
-        const autoMsg: MessageRecord = {
-          id: `msg_reply_${Date.now()}`,
-          matchId,
-          senderId: recipientId,
-          recipientId: currentUser.id,
-          text: randomReply,
-          createdAt: new Date().toISOString(),
-          isRead: false,
-        };
-
-        setMessages((prev) => ({
-          ...prev,
-          [matchId]: [...(prev[matchId] || []), autoMsg],
-        }));
-
-        setMatches((prev) =>
-          prev.map((m) =>
-            m.id === matchId
-              ? {
-                  ...m,
-                  lastMessage: randomReply,
-                  lastMessageAt: new Date().toISOString(),
-                  lastMessageSenderId: recipientId,
-                  unreadCountByUser: {
-                    ...m.unreadCountByUser,
-                    [currentUser.id]: (m.unreadCountByUser?.[currentUser.id] || 0) + 1,
-                  },
-                }
-              : m
-          )
-        );
-      }
-    }, 2200);
   };
 
   const blockUser = (targetProfileId: string) => {
@@ -854,8 +791,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setMatches((prev) => prev.filter((m) => m.id !== matchId));
   };
 
-  const requestVerification = (selfieUrl: string, idDocumentUrl?: string) => {
+  const requestVerification = async (selfieUrl: string, idDocumentUrl?: string): Promise<void> => {
     if (!currentUser) return;
+
     const newReq: VerificationRequest = {
       id: `ver_req_${Date.now()}`,
       userId: currentUser.id,
@@ -866,8 +804,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       submittedAt: new Date().toISOString(),
       status: 'pending',
     };
+
+    // Optimistic local + persistence state update
     setVerificationRequests((prev) => [newReq, ...prev]);
     updateProfile({ verificationStatus: 'pending' });
+
+    // Persist the verification request to Firestore so the moderation
+    // team / admin dashboard can surface it.
+    try {
+      await addDoc(collection(db, 'verification_requests'), newReq);
+    } catch (err) {
+      console.error('Error saving verification request to Firestore:', err);
+    }
+
+    // Trigger the server-side email notifications (admin + user ack).
+    // Email delivery is best-effort here; the request is already recorded.
+    try {
+      await fetch('/api/verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: currentUser.id,
+          userName: currentUser.name,
+          userEmail: userAccount?.email || firebaseUser?.email || '',
+          userPhoto: newReq.userPhoto,
+          selfieUrl,
+          idDocumentUrl,
+          submittedAt: newReq.submittedAt,
+        }),
+      });
+    } catch (err) {
+      console.error('Error triggering verification email notifications:', err);
+    }
   };
 
   const adminApproveVerification = (requestId: string) => {
@@ -923,16 +891,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         matches,
         messages,
         reports,
-        blocks,
-        verificationRequests,
-        currentMatchCelebration,
-        clearMatchCelebration,
+         blocks,
+         verificationRequests,
+         currentMatchCelebration,
+         likesReceived,
+         realReceivedLikers,
+         matchesCount,
+         getIdToken,
+         clearMatchCelebration,
         registerWithEmail,
         loginWithEmail,
         sendPasswordReset,
-        logout,
-        switchUser,
-        updateProfile,
+         logout,
+         updateProfile,
         updatePreferences,
         completeOnboarding,
         uploadPhoto,

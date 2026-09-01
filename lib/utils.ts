@@ -43,6 +43,12 @@ export function isAdult(birthDateString: string): boolean {
   return calculateAge(birthDateString) >= 18;
 }
 
+const DUMMY_IMAGE_HOSTS = ['images.unsplash.com', 'source.unsplash.com'];
+
+export function filterRealPhotos(photos: string[]): string[] {
+  return photos.filter((url) => !DUMMY_IMAGE_HOSTS.some((host) => url.includes(host)));
+}
+
 export interface ProfileCompletionResult {
   percentage: number;
   completedCount: number;

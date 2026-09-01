@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import React, { useState } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Mail,
   Lock,
@@ -11,33 +11,31 @@ import {
   Eye,
   EyeOff,
   CheckCircle2,
-  Users,
   KeyRound,
   X,
-  Sparkles,
-} from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { FormField, Input } from '@/components/ui/FormField';
-import { useAuth } from '@/lib/context/AuthContext';
-import { useToast } from '@/components/ui/Toast';
+} from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { FormField, Input } from "@/components/ui/FormField";
+import { useAuth } from "@/lib/context/AuthContext";
+import { useToast } from "@/components/ui/Toast";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectUrl = searchParams.get('redirect') || '/discover';
+  const redirectUrl = searchParams.get("redirect") || "/discover";
 
-  const { loginWithEmail, sendPasswordReset, switchUser } = useAuth();
+  const { loginWithEmail, sendPasswordReset } = useAuth();
   const { toast } = useToast();
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Password reset modal state
   const [showResetModal, setShowResetModal] = useState(false);
-  const [resetEmail, setResetEmail] = useState('');
+  const [resetEmail, setResetEmail] = useState("");
   const [isResetting, setIsResetting] = useState(false);
   const [resetSent, setResetSent] = useState(false);
 
@@ -46,23 +44,26 @@ function LoginForm() {
     setErrorMessage(null);
 
     if (!email.trim()) {
-      setErrorMessage('Please enter your email address.');
+      setErrorMessage("Please enter your email address.");
       return;
     }
     if (!password) {
-      setErrorMessage('Please enter your password.');
+      setErrorMessage("Please enter your password.");
       return;
     }
 
     setIsLoading(true);
     try {
       await loginWithEmail(email.trim(), password);
-      toast('Welcome back to JamboDate!', 'success');
+      toast("Welcome back to JamboDate!", "success");
       router.push(redirectUrl);
     } catch (err: unknown) {
-      const errText = err instanceof Error ? err.message : 'Invalid credentials. Please verify and try again.';
+      const errText =
+        err instanceof Error
+          ? err.message
+          : "Invalid credentials. Please verify and try again.";
       setErrorMessage(errText);
-      toast(errText, 'error');
+      toast(errText, "error");
     } finally {
       setIsLoading(false);
     }
@@ -71,7 +72,7 @@ function LoginForm() {
   const handlePasswordResetSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!resetEmail.trim()) {
-      toast('Please enter your email address', 'error');
+      toast("Please enter your email address", "error");
       return;
     }
 
@@ -79,19 +80,16 @@ function LoginForm() {
     try {
       await sendPasswordReset(resetEmail.trim());
       setResetSent(true);
-      toast('Password reset link sent to your email!', 'success');
+      toast("Password reset link sent to your email!", "success");
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Could not send reset email. Verify your address.';
-      toast(msg, 'error');
+      const msg =
+        err instanceof Error
+          ? err.message
+          : "Could not send reset email. Verify your address.";
+      toast(msg, "error");
     } finally {
       setIsResetting(false);
     }
-  };
-
-  const handleQuickDemoLogin = (profileId: string, demoEmail: string) => {
-    switchUser(profileId);
-    toast(`Logged in as demo user`, 'info');
-    router.push(redirectUrl);
   };
 
   return (
@@ -101,7 +99,7 @@ function LoginForm() {
         <Link href="/" className="inline-flex items-center gap-2 mb-4">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#D85B7A] to-[#D99A52] p-0.5 flex items-center justify-center">
             <div className="w-full h-full bg-[#0D1110] rounded-[10px] flex items-center justify-center">
-              <span className="font-extrabold text-xl text-[#F5F3EF]">M</span>
+              <span className="font-extrabold text-xl text-[#F5F3EF]">J</span>
             </div>
           </div>
           <span className="text-2xl font-bold tracking-tight text-[#F5F3EF] flex items-center gap-1">
@@ -114,7 +112,8 @@ function LoginForm() {
           Karibu Tena!
         </h1>
         <p className="mt-2 text-xs sm:text-sm text-[#A8AAA5]">
-          Sign in to your JamboDate account to connect with genuine Kenyan singles.
+          Sign in to your JamboDate account to connect with genuine Kenyan
+          singles.
         </p>
       </div>
 
@@ -136,7 +135,7 @@ function LoginForm() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="e.g. james@jambodate.co.ke"
+                  placeholder="e.g. james@jambodate.xyz"
                   className="pl-9"
                   required
                 />
@@ -147,7 +146,10 @@ function LoginForm() {
             {/* Password */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold uppercase tracking-wider text-[#A8AAA5]" htmlFor="login-password">
+                <label
+                  className="text-xs font-semibold uppercase tracking-wider text-[#A8AAA5]"
+                  htmlFor="login-password"
+                >
                   Password <span className="text-[#D85B7A]">*</span>
                 </label>
                 <button
@@ -165,7 +167,7 @@ function LoginForm() {
               <div className="relative">
                 <Input
                   id="login-password"
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Your JamboDate password"
@@ -178,7 +180,11 @@ function LoginForm() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-3 text-[#A8AAA5] hover:text-[#F5F3EF] transition-colors"
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
                 </button>
               </div>
             </div>
@@ -192,43 +198,16 @@ function LoginForm() {
             >
               Sign In to JamboDate <ArrowRight className="w-4 h-4 ml-1" />
             </Button>
-          </form>
-
-          {/* Quick Demo Selector for fast evaluation */}
-          <div className="mt-8 pt-6 border-t border-[#272D2A]">
-            <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#D99A52] mb-3">
-              <Sparkles className="w-3.5 h-3.5" /> Quick Demo Accounts for Testing
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => handleQuickDemoLogin('user_current', 'james@jambodate.co.ke')}
-                className="p-2.5 rounded-xl bg-[#0D1110] border border-[#272D2A] hover:border-[#D85B7A] text-left transition-colors cursor-pointer group"
-              >
-                <p className="text-xs font-semibold text-[#F5F3EF] group-hover:text-[#D85B7A]">
-                  James Mugambi
-                </p>
-                <p className="text-[10px] text-[#A8AAA5]">Nairobi · Tech Lead · 29</p>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickDemoLogin('user_wangari', 'wangari@jambodate.co.ke')}
-                className="p-2.5 rounded-xl bg-[#0D1110] border border-[#272D2A] hover:border-[#D85B7A] text-left transition-colors cursor-pointer group"
-              >
-                <p className="text-xs font-semibold text-[#F5F3EF] group-hover:text-[#D85B7A]">
-                  Wangari Kamau
-                </p>
-                <p className="text-[10px] text-[#A8AAA5]">Nairobi · Product Mgr · 28</p>
-              </button>
-            </div>
-          </div>
+           </form>
 
           {/* Switch to Register */}
           <div className="mt-6 pt-6 border-t border-[#272D2A] text-center">
             <p className="text-xs text-[#A8AAA5]">
-              Don&apos;t have an account yet?{' '}
-              <Link href="/register" className="font-semibold text-[#D85B7A] hover:underline">
+              Don&apos;t have an account yet?{" "}
+              <Link
+                href="/register"
+                className="font-semibold text-[#D85B7A] hover:underline"
+              >
                 Create free profile (18+)
               </Link>
             </p>
@@ -255,8 +234,12 @@ function LoginForm() {
                 <KeyRound className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-[#F5F3EF]">Reset Password</h3>
-                <p className="text-xs text-[#A8AAA5]">We will send you a secure reset link</p>
+                <h3 className="text-lg font-bold text-[#F5F3EF]">
+                  Reset Password
+                </h3>
+                <p className="text-xs text-[#A8AAA5]">
+                  We will send you a secure reset link
+                </p>
               </div>
             </div>
 
@@ -265,7 +248,8 @@ function LoginForm() {
                 <div className="p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-800/60 flex items-start gap-3 text-emerald-200 text-xs">
                   <CheckCircle2 className="w-4 h-4 text-[#3FAF72] shrink-0 mt-0.5" />
                   <p>
-                    Check your inbox! We sent password reset instructions to <strong>{resetEmail}</strong>.
+                    Check your inbox! We sent password reset instructions to{" "}
+                    <strong>{resetEmail}</strong>.
                   </p>
                 </div>
                 <Button
@@ -294,7 +278,7 @@ function LoginForm() {
                       type="email"
                       value={resetEmail}
                       onChange={(e) => setResetEmail(e.target.value)}
-                      placeholder="e.g. james@jambodate.co.ke"
+                      placeholder="e.g. james@jambodate.xyz"
                       className="pl-9"
                       required
                     />

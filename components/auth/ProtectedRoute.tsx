@@ -3,15 +3,24 @@
 import React, { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/context/AuthContext';
+import { UNAUTHENTICATED_REDIRECT } from '@/lib/auth/routes';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  /** When true (default), users with an incomplete profile are sent to onboarding. */
   requireOnboarding?: boolean;
+  /**
+   * Route to send an authenticated user to once their onboarding is finished.
+   * Used on the onboarding page itself so completed / onboarded sessions are
+   * redirected away from the onboarding wizard instead of looping.
+   */
+  completedRedirect?: string;
 }
 
 export function ProtectedRoute({
   children,
   requireOnboarding = true,
+  completedRedirect,
 }: ProtectedRouteProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -21,14 +30,21 @@ export function ProtectedRoute({
     if (isLoading) return;
 
     if (!currentUser) {
-      router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
+      router.replace(UNAUTHENTICATED_REDIRECT);
+      return;
+    }
+
+    // The onboarding page: if the user has already finished onboarding,
+    // bounce them to the app.
+    if (completedRedirect && currentUser.onboardingCompleted !== false) {
+      router.replace(completedRedirect);
       return;
     }
 
     if (requireOnboarding && currentUser.onboardingCompleted === false && pathname !== '/onboarding') {
       router.replace('/onboarding');
     }
-  }, [currentUser, isLoading, router, pathname, requireOnboarding]);
+  }, [currentUser, isLoading, router, pathname, requireOnboarding, completedRedirect]);
 
   if (isLoading) {
     return (
@@ -36,7 +52,7 @@ export function ProtectedRoute({
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#D85B7A] to-[#D99A52] p-0.5 animate-pulse">
             <div className="w-full h-full bg-[#0D1110] rounded-[14px] flex items-center justify-center">
-              <span className="font-extrabold text-2xl text-[#F5F3EF]">M</span>
+              <span className="font-extrabold text-2xl text-[#F5F3EF]">J</span>
             </div>
           </div>
           <div className="flex items-center gap-2">

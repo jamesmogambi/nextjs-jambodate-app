@@ -13,15 +13,15 @@ import { useToast } from '@/components/ui/Toast';
 import Link from 'next/link';
 
 export default function LikesPage() {
-  const { allProfiles, likes, matches, likeProfile, currentUser } = useAuth();
+   const { allProfiles, likes, matches, likeProfile, currentUser, realReceivedLikers } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<'received' | 'sent'>('received');
 
-  // Profiles that have liked the current user (demo simulated inbound likes: e.g. Wangari, Brian, Sharon)
+   // Profiles that have liked the current user (real Firestore-backed received likes)
   const receivedLikesProfiles = allProfiles.filter(
     (p) =>
       p.id !== currentUser?.id &&
-      ['user_wangari', 'user_brian', 'user_sharon', 'user_faith'].includes(p.id) &&
+      realReceivedLikers.includes(p.id) &&
       !matches.some((m) => m.users.includes(p.id))
   );
 
